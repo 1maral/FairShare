@@ -7,18 +7,10 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
-import androidx.navigation3.runtime.entryProvider
-import androidx.navigation3.runtime.rememberNavBackStack
-import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
-import androidx.navigation3.scene.rememberSceneSetupNavEntryDecorator
-import androidx.navigation3.ui.NavDisplay
-import hu.ait.maral.fairshare.ui.navigation.LoginScreenKey
-import hu.ait.maral.fairshare.ui.navigation.SignUpScreenKey
-import hu.ait.maral.fairshare.ui.screen.start.LoginScreen
-import hu.ait.maral.fairshare.ui.screen.start.SignUpScreen
+import androidx.compose.ui.tooling.preview.Preview
 import hu.ait.maral.fairshare.ui.theme.FairShareTheme
 
 class MainActivity : ComponentActivity() {
@@ -28,7 +20,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             FairShareTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    NavGraph(
+                    Greeting(
+                        name = "Android",
                         modifier = Modifier.padding(innerPadding)
                     )
                 }
@@ -36,45 +29,19 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+
 @Composable
-fun NavGraph(modifier: Modifier) {
-    val backStack = rememberNavBackStack(LoginScreenKey)
-
-    NavDisplay(
-        backStack = backStack,
-        onBack = { backStack.removeLastOrNull() },
-        entryDecorators = listOf(
-            rememberSceneSetupNavEntryDecorator(),
-            rememberSavedStateNavEntryDecorator(),
-            rememberViewModelStoreNavEntryDecorator()
-        ),
-        entryProvider = entryProvider {
-
-            // LOGIN SCREEN
-            entry<LoginScreenKey> {
-                LoginScreen(
-                    onLoginSuccess = {
-                        // TODO: navigate to home later
-                    },
-                    onNavigateToRegister = {
-                        backStack.add(SignUpScreenKey)
-                    }
-                )
-            }
-
-            // SIGNUP SCREEN
-            entry<SignUpScreenKey> {
-                SignUpScreen(
-                    // return to login
-                    onRegisterSuccess = {
-                        backStack.removeLastOrNull()
-                    },
-                    // return to login
-                    onNavigateBack = {
-                        backStack.removeLastOrNull()
-                    }
-                )
-            }
-        }
+fun Greeting(name: String, modifier: Modifier = Modifier) {
+    Text(
+        text = "Hello $name!",
+        modifier = modifier
     )
+}
+
+@Preview(showBackground = true)
+@Composable
+fun GreetingPreview() {
+    FairShareTheme {
+        Greeting("Android")
+    }
 }
