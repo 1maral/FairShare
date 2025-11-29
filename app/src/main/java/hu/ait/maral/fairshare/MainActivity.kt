@@ -15,8 +15,10 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
 import androidx.navigation3.scene.rememberSceneSetupNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
+import hu.ait.maral.fairshare.ui.navigation.HomeScreenKey
 import hu.ait.maral.fairshare.ui.navigation.LoginScreenKey
 import hu.ait.maral.fairshare.ui.navigation.SignUpScreenKey
+import hu.ait.maral.fairshare.ui.screen.HomeScreen
 import hu.ait.maral.fairshare.ui.screen.start.LoginScreen
 import hu.ait.maral.fairshare.ui.screen.start.SignUpScreen
 import hu.ait.maral.fairshare.ui.theme.FairShareTheme
@@ -54,26 +56,26 @@ fun NavGraph(modifier: Modifier) {
             entry<LoginScreenKey> {
                 LoginScreen(
                     onLoginSuccess = {
-                        // TODO: navigate to home later
+                        backStack.add(HomeScreenKey)
                     },
-                    onNavigateToRegister = {
-                        backStack.add(SignUpScreenKey)
+                    onNavigateToRegister = {email, password ->
+                        backStack.add(SignUpScreenKey(email, password))
                     }
                 )
             }
 
             // SIGNUP SCREEN
-            entry<SignUpScreenKey> {
+            entry<SignUpScreenKey> { route ->
                 SignUpScreen(
-                    // return to login
-                    onRegisterSuccess = {
-                        backStack.removeLastOrNull()
-                    },
-                    // return to login
-                    onNavigateBack = {
-                        backStack.removeLastOrNull()
-                    }
+                    defaultEmail = route.email,
+                    defaultPassword = route.password,
+                    onRegisterSuccess = { backStack.add(HomeScreenKey)},
+                    onNavigateBack = { backStack.removeLastOrNull() }
                 )
+            }
+            // HOME SCREEN
+            entry<HomeScreenKey> {
+                HomeScreen()
             }
         }
     )

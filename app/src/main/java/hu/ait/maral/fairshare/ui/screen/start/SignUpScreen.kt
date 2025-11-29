@@ -24,14 +24,16 @@ import kotlinx.coroutines.launch
 @Composable
 fun SignUpScreen(
     viewModel: SignUpViewModel = viewModel(),
+    defaultEmail: String = "",
+    defaultPassword: String = "",
     onRegisterSuccess: () -> Unit,
     onNavigateBack: () -> Unit
 ) {
     var name by rememberSaveable { mutableStateOf("") }
     var phone by rememberSaveable { mutableStateOf("") }
-    var email by rememberSaveable { mutableStateOf("") }
-    var password by rememberSaveable { mutableStateOf("") }
-    var confirmPassword by rememberSaveable { mutableStateOf("") }
+    var email by rememberSaveable { mutableStateOf(defaultEmail) }
+    var password by rememberSaveable { mutableStateOf(defaultPassword) }
+    var confirmPassword by rememberSaveable { mutableStateOf(defaultPassword) }
     var showPassword by rememberSaveable { mutableStateOf(false) }
     var showPasswordConfirm by rememberSaveable { mutableStateOf(false) }
 
