@@ -1,6 +1,7 @@
 package hu.ait.maral.fairshare.ui.screen.start
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
@@ -11,17 +12,18 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import hu.ait.maral.fairshare.data.User
 import kotlinx.coroutines.launch
 
 @Composable
 fun SignUpScreen(
-    viewModel: LoginViewModel = viewModel(),
-    modifier: Modifier = Modifier,
+    viewModel: SignUpViewModel = viewModel(),
     onRegisterSuccess: () -> Unit,
     onNavigateBack: () -> Unit
 ) {
@@ -32,6 +34,9 @@ fun SignUpScreen(
     var confirmPassword by rememberSaveable { mutableStateOf("") }
     var showPassword by rememberSaveable { mutableStateOf(false) }
     var showPasswordConfirm by rememberSaveable { mutableStateOf(false) }
+
+    // For simplicity, let's just allow entering one payment method here
+    var venmo by rememberSaveable { mutableStateOf("") }
 
     val coroutineScope = rememberCoroutineScope()
 
@@ -53,41 +58,36 @@ fun SignUpScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
-            // Name field
             OutlinedTextField(
-                modifier = Modifier.fillMaxWidth(),
                 value = name,
                 onValueChange = { name = it },
                 label = { Text("Full Name") },
-                singleLine = true
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
             )
 
-            // Phone field
             OutlinedTextField(
-                modifier = Modifier.fillMaxWidth(),
                 value = phone,
                 onValueChange = { phone = it },
                 label = { Text("Phone Number") },
-                singleLine = true
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                modifier = Modifier.fillMaxWidth()
             )
 
-            // Email field
             OutlinedTextField(
-                modifier = Modifier.fillMaxWidth(),
                 value = email,
                 onValueChange = { email = it },
-                label = { Text("E-mail") },
-                leadingIcon = { Icon(Icons.Default.Email, null) },
-                singleLine = true
+                label = { Text("Email") },
+                leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
             )
 
-            // Password field
             OutlinedTextField(
-                modifier = Modifier.fillMaxWidth(),
                 value = password,
                 onValueChange = { password = it },
                 label = { Text("Password") },
-                leadingIcon = { Icon(Icons.Default.Info, null) },
                 singleLine = true,
                 visualTransformation =
                     if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
@@ -98,12 +98,11 @@ fun SignUpScreen(
                             contentDescription = null
                         )
                     }
-                }
+                },
+                modifier = Modifier.fillMaxWidth()
             )
 
-            // Confirm Password
             OutlinedTextField(
-                modifier = Modifier.fillMaxWidth(),
                 value = confirmPassword,
                 onValueChange = { confirmPassword = it },
                 label = { Text("Confirm Password") },
@@ -117,12 +116,20 @@ fun SignUpScreen(
                             contentDescription = null
                         )
                     }
-                }
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            OutlinedTextField(
+                value = venmo,
+                onValueChange = { venmo = it },
+                label = { Text("Venmo Username (optional)") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
             )
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // Buttons
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -130,15 +137,21 @@ fun SignUpScreen(
                 OutlinedButton(onClick = { onNavigateBack() }) {
                     Text("Back")
                 }
+
                 OutlinedButton(onClick = {
-                    if (password != confirmPassword) {
-                        return@OutlinedButton
-                    }
+                    if (password != confirmPassword) return@OutlinedButton
+
                     coroutineScope.launch {
-                        val result = viewModel.registerUser(email, password)
-                        if (result?.user != null) {
-                            onRegisterSuccess()
-                        }
+                        val paymentMethods = mutableMapOf<String, String>()
+                        if (venmo.isNotBlank()) paymentMethods["Venmo"] = venmo
+
+                        viewModel.registerUser(
+                            name = name,
+                            email = email,
+                            password = password,
+                            phone = if (phone.isNotBlank()) phone else null,
+                            paymentMethods = paymentMethods
+                        )
                     }
                 }) {
                     Text("Sign Up")
@@ -146,19 +159,21 @@ fun SignUpScreen(
             }
         }
 
-        // Bottom status messages
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = 50.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            when (viewModel.loginUiState) {
-                is LoginUiState.Error -> Text(
-                    text = "Error: ${(viewModel.loginUiState as LoginUiState.Error).errorMessage}"
+            when (viewModel.signUpUiState) {
+                is SignUpUiState.Error -> Text(
+                    text = "Error: ${(viewModel.signUpUiState as SignUpUiState.Error).errorMessage}"
                 )
-                is LoginUiState.Loading -> CircularProgressIndicator()
-                is LoginUiState.RegisterSuccess -> Text("Account created successfully!")
+                is SignUpUiState.Loading -> CircularProgressIndicator()
+                is SignUpUiState.RegisterSuccess -> {
+                    Text("Account created successfully!")
+                    onRegisterSuccess()
+                }
                 else -> {}
             }
         }
