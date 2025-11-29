@@ -7,4 +7,7 @@ import kotlinx.serialization.Serializable
 data object LoginScreenKey: NavKey
 
 @Serializable
-data object SignUpScreenKey : NavKey
+data class SignUpScreenKey(val email: String, val password: String): NavKey
+
+@Serializable
+data object HomeScreenKey : NavKey

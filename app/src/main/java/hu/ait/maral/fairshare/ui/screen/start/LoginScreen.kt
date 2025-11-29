@@ -39,7 +39,7 @@ fun LoginScreen(
     viewModel: LoginViewModel = viewModel(),
     modifier: Modifier = Modifier,
     onLoginSuccess: () -> Unit,
-    onNavigateToRegister: () -> Unit
+    onNavigateToRegister: (prefillEmail: String, prefillPassword: String) -> Unit
 ) {
 
     var showPassword by rememberSaveable { mutableStateOf(false) }
@@ -113,7 +113,9 @@ fun LoginScreen(
                 }) {
                     Text(text = "Login")
                 }
-                OutlinedButton(onClick = { onNavigateToRegister() }) {
+                OutlinedButton(onClick = {
+                    onNavigateToRegister(email, password)
+                }) {
                     Text("Register")
                 }
             }
