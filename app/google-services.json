@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "67972814022",
+    "project_id": "fairshare-d34bb",
+    "storage_bucket": "fairshare-d34bb.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:67972814022:android:a432842b083cad2ef8f3c7",
+        "android_client_info": {
+          "package_name": "hu.ait.maral.fairshare"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDzfMxpjcrRNzOm8d5R_9K7AhKBnlfPaUU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
