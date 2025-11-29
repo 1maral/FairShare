@@ -18,7 +18,7 @@ import androidx.navigation3.ui.NavDisplay
 import hu.ait.maral.fairshare.ui.navigation.HomeScreenKey
 import hu.ait.maral.fairshare.ui.navigation.LoginScreenKey
 import hu.ait.maral.fairshare.ui.navigation.SignUpScreenKey
-import hu.ait.maral.fairshare.ui.screen.HomeScreen
+import hu.ait.maral.fairshare.ui.screen.home.HomeScreen
 import hu.ait.maral.fairshare.ui.screen.start.LoginScreen
 import hu.ait.maral.fairshare.ui.screen.start.SignUpScreen
 import hu.ait.maral.fairshare.ui.theme.FairShareTheme
