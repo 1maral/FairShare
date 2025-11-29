@@ -1,4 +1,4 @@
-package hu.ait.maral.fairshare.ui.screen
+package hu.ait.maral.fairshare.ui.screen.home
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -9,6 +9,7 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
@@ -20,20 +21,17 @@ data class GroupUi(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen() {
-    // fake data for now, instead of Room
-    val groups = listOf(
-        GroupUi(
-            name = "Roommates",
-            members = listOf("Alice", "Bob", "Chris"),
-            prices = listOf("5", "6", "7")
-        ),
-        GroupUi(
-            name = "Trip to Paris",
-            members = listOf("Aurelia", "Sam"),
-            prices = listOf("20", "15")
-        )
-    )
+fun HomeScreen(
+    viewModel: HomeScreenViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+) {
+    val groups = viewModel.groups.value
+    val isLoading = viewModel.isLoading.value
+    val errorMessage = viewModel.errorMessage.value
+
+    // Load groups once when screen appears
+    LaunchedEffect(Unit) {
+        viewModel.loadGroupsForUser()
+    }
 
     Scaffold(
         topBar = {
@@ -41,38 +39,55 @@ fun HomeScreen() {
                 title = { Text("FairShare") },
                 actions = {
                     IconButton(onClick = { }) {
-                        Icon(
-                            imageVector = Icons.Filled.Person,
-                            contentDescription = "Profile"
-                        )
+                        Icon(Icons.Filled.Person, contentDescription = "Profile")
                     }
                     IconButton(onClick = { }) {
-                        Icon(
-                            imageVector = Icons.Filled.Notifications,
-                            contentDescription = "Notifications"
-                        )
+                        Icon(Icons.Filled.Notifications, contentDescription = "Notifications")
                     }
                     IconButton(onClick = { }) {
-                        Icon(
-                            imageVector = Icons.Filled.AddCircle,
-                            contentDescription = "Add Group"
-                        )
+                        Icon(Icons.Filled.AddCircle, contentDescription = "Add Group")
                     }
                 }
             )
         }
     ) { padding ->
 
-        LazyColumn(
+        Column(
             modifier = Modifier
-                .padding(padding)      // from Scaffold
-                .padding(16.dp)        // your own spacing
+                .padding(padding)
+                .padding(16.dp)
         ) {
-            items(groups) { group ->
-                GroupCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    group = group
-                )
+
+            when {
+                isLoading -> {
+                    CircularProgressIndicator()
+                }
+
+                errorMessage != null -> {
+                    Text(
+                        text = "Error: $errorMessage",
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+
+                groups.isEmpty() -> {
+                    Text("You are not in any groups yet.")
+                }
+
+                else -> {
+                    LazyColumn {
+                        items(groups) { group ->
+                            GroupCard(
+                                modifier = Modifier.fillMaxWidth(),
+                                group = GroupUi(
+                                    name = group.name,
+                                    members = group.members,
+                                    prices = group.prices
+                                )
+                            )
+                        }
+                    }
+                }
             }
         }
     }

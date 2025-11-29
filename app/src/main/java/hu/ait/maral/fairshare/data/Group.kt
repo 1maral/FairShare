@@ -1,0 +1,9 @@
+package hu.ait.maral.fairshare.data
+
+data class Group(
+    val groupId: String = "",
+    val name: String = "",
+    val members: List<String> = emptyList(),
+    val memberIds: List<String> = emptyList(),  
+    val prices: List<String> = emptyList(),
+)

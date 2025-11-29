@@ -8,8 +8,6 @@ data class User(
     val profilePictureUrl: String? = null,
     // "Zelle" -> "@username"
     val paymentMethods: Map<String, String> = emptyMap(),
-    // expense roomIDs the user is part of
-    val rooms: List<String> = emptyList(),
     val createdAt: Long = System.currentTimeMillis(),
     val lastLogin: Long = System.currentTimeMillis()
 )
