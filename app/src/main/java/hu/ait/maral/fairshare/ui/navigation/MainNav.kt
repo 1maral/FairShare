@@ -5,3 +5,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data object LoginScreenKey: NavKey
+
+@Serializable
+data object SignUpScreenKey : NavKey

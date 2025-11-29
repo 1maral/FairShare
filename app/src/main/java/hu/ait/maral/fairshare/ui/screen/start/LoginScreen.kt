@@ -38,11 +38,13 @@ import kotlinx.coroutines.launch
 fun LoginScreen(
     viewModel: LoginViewModel = viewModel(),
     modifier: Modifier = Modifier,
-    onLoginSuccess: () -> Unit) {
+    onLoginSuccess: () -> Unit,
+    onNavigateToRegister: () -> Unit
+) {
 
     var showPassword by rememberSaveable { mutableStateOf(false) }
-    var email by rememberSaveable { mutableStateOf("demo@ait.hu") }
-    var password by rememberSaveable { mutableStateOf("123456") }
+    var email by rememberSaveable { mutableStateOf("fairexample@gmail.com") }
+    var password by rememberSaveable { mutableStateOf("123456789") }
 
     val coroutineScope = rememberCoroutineScope()
     Box() {
@@ -111,10 +113,8 @@ fun LoginScreen(
                 }) {
                     Text(text = "Login")
                 }
-                OutlinedButton(onClick = {
-                    viewModel.registerUser(email, password)
-                }) {
-                    Text(text = "Register")
+                OutlinedButton(onClick = { onNavigateToRegister() }) {
+                    Text("Register")
                 }
             }
         }
@@ -135,8 +135,8 @@ fun LoginScreen(
 
                 is LoginUiState.Init -> {}
                 is LoginUiState.Loading -> CircularProgressIndicator()
-                is LoginUiState.LoginSuccess -> Text("Login OK")
-                is LoginUiState.RegisterSuccess -> Text("Register OK")
+                is LoginUiState.LoginSuccess -> Text("Logged in successfully...")
+                is LoginUiState.RegisterSuccess -> Text("Registered successfully...")
             }
         }
     }

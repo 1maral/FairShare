@@ -16,7 +16,9 @@ import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
 import androidx.navigation3.scene.rememberSceneSetupNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import hu.ait.maral.fairshare.ui.navigation.LoginScreenKey
+import hu.ait.maral.fairshare.ui.navigation.SignUpScreenKey
 import hu.ait.maral.fairshare.ui.screen.start.LoginScreen
+import hu.ait.maral.fairshare.ui.screen.start.SignUpScreen
 import hu.ait.maral.fairshare.ui.theme.FairShareTheme
 
 class MainActivity : ComponentActivity() {
@@ -39,19 +41,37 @@ fun NavGraph(modifier: Modifier) {
     val backStack = rememberNavBackStack(LoginScreenKey)
 
     NavDisplay(
-        //modifier = modifier,
         backStack = backStack,
-        onBack = {backStack.removeLastOrNull()},
+        onBack = { backStack.removeLastOrNull() },
         entryDecorators = listOf(
             rememberSceneSetupNavEntryDecorator(),
             rememberSavedStateNavEntryDecorator(),
             rememberViewModelStoreNavEntryDecorator()
         ),
-        entryProvider  = entryProvider {
+        entryProvider = entryProvider {
+
+            // LOGIN SCREEN
             entry<LoginScreenKey> {
                 LoginScreen(
                     onLoginSuccess = {
-                        //backStack.add(HomeScreenKey)
+                        // TODO: navigate to home later
+                    },
+                    onNavigateToRegister = {
+                        backStack.add(SignUpScreenKey)
+                    }
+                )
+            }
+
+            // SIGNUP SCREEN
+            entry<SignUpScreenKey> {
+                SignUpScreen(
+                    // return to login
+                    onRegisterSuccess = {
+                        backStack.removeLastOrNull()
+                    },
+                    // return to login
+                    onNavigateBack = {
+                        backStack.removeLastOrNull()
                     }
                 )
             }
