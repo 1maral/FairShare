@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import hu.ait.maral.fairshare.data.Group
+import hu.ait.maral.fairshare.data.User
+import kotlin.jvm.java
 
 class HomeScreenViewModel : ViewModel() {
 
@@ -42,4 +44,134 @@ class HomeScreenViewModel : ViewModel() {
                 isLoading.value = false
             }
     }
+
+    fun createGroup(name: String, memberEmails: List<String>) {
+        val currentUser = auth.currentUser ?: return
+
+        if (name.isBlank()) {
+            errorMessage.value = "Group name cannot be empty."
+            return
+        }
+
+        // Clean invited emails (the ones you typed in the dialog)
+        val invitedEmails = buildSet<String> {
+            memberEmails.forEach { raw ->
+                val clean = raw.trim().lowercase()
+                if (clean.isNotEmpty()) add(clean)
+            }
+        }.toList()
+
+        isLoading.value = true
+        errorMessage.value = null
+
+        // Helper: fetch creator's display name from Firestore users or fallback
+        val creatorUid = currentUser.uid
+        val usersRef = db.collection("users").document(creatorUid)
+
+        usersRef.get().addOnSuccessListener { userSnap ->
+            val creatorName = userSnap.getString("name")
+                ?: currentUser.displayName
+                ?: currentUser.email
+                ?: "Unknown"
+
+            // If no invited emails -> group with just creator
+            if (invitedEmails.isEmpty()) {
+                val groupData = hashMapOf(
+                    "name" to name,
+                    "members" to listOf(creatorName),        // only creator
+                    "memberIds" to listOf(creatorUid),       // only creator
+                    "pendingMemberIds" to emptyList<String>(),
+                    "balances" to listOf(0.0)                // creator starts at 0
+                )
+
+                db.collection("groups")
+                    .add(groupData)
+                    .addOnSuccessListener {
+                        isLoading.value = false
+                        loadGroupsForUser()
+                    }
+                    .addOnFailureListener { e ->
+                        isLoading.value = false
+                        errorMessage.value = e.localizedMessage
+                    }
+
+                return@addOnSuccessListener
+            }
+
+            // We DO have invited emails → look up their UIDs
+            val emailToUid = mutableMapOf<String, String>()
+            val invalidEmails = mutableListOf<String>()
+            var processed = 0
+            val total = invitedEmails.size
+
+            fun finishValidation() {
+                if (invalidEmails.isNotEmpty()) {
+                    isLoading.value = false
+                    errorMessage.value =
+                        "These emails are not registered users: ${invalidEmails.joinToString(", ")}"
+                    return
+                }
+
+                // Creator is the ONLY confirmed member at creation time
+                val confirmedMemberIds = listOf(creatorUid)
+                val confirmedMemberNames = listOf(creatorName)
+                val confirmedBalances = listOf(0.0)
+
+                val pendingMemberIds = emailToUid.values
+                    .filter { it != creatorUid }
+                    .distinct()
+
+                val groupData = hashMapOf(
+                    "name" to name,
+                    "members" to confirmedMemberNames,   // only confirmed members
+                    "memberIds" to confirmedMemberIds,
+                    "pendingMemberIds" to pendingMemberIds,
+                    "balances" to confirmedBalances
+                )
+
+                db.collection("groups")
+                    .add(groupData)
+                    .addOnSuccessListener {
+                        isLoading.value = false
+                        loadGroupsForUser()
+                    }
+                    .addOnFailureListener { e ->
+                        isLoading.value = false
+                        errorMessage.value = e.localizedMessage
+                    }
+            }
+
+            for (email in invitedEmails) {
+                db.collection("users")
+                    .whereEqualTo("email", email)
+                    .limit(1)
+                    .get()
+                    .addOnSuccessListener { snapshot ->
+                        processed++
+                        val doc = snapshot.documents.firstOrNull()
+                        if (doc != null) {
+                            val uid = doc.getString("uid")
+                            if (!uid.isNullOrBlank()) {
+                                emailToUid[email] = uid
+                            } else {
+                                invalidEmails.add(email)
+                            }
+                        } else {
+                            invalidEmails.add(email)
+                        }
+
+                        if (processed == total) finishValidation()
+                    }
+                    .addOnFailureListener {
+                        processed++
+                        invalidEmails.add(email)
+                        if (processed == total) finishValidation()
+                    }
+            }
+        }.addOnFailureListener { e ->
+            isLoading.value = false
+            errorMessage.value = e.localizedMessage
+        }
+    }
+
 }

@@ -4,6 +4,7 @@ data class Group(
     val groupId: String = "",
     val name: String = "",
     val members: List<String> = emptyList(),
-    val memberIds: List<String> = emptyList(),  
-    val prices: List<String> = emptyList(),
+    val memberIds: List<String> = emptyList(),
+    val pendingMemberIds: List<String> = emptyList(),
+    val balances: List<Double> = emptyList()
 )

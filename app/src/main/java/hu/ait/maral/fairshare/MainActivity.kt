@@ -17,8 +17,10 @@ import androidx.navigation3.scene.rememberSceneSetupNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import hu.ait.maral.fairshare.ui.navigation.HomeScreenKey
 import hu.ait.maral.fairshare.ui.navigation.LoginScreenKey
+import hu.ait.maral.fairshare.ui.navigation.NotificationScreenKey
 import hu.ait.maral.fairshare.ui.navigation.SignUpScreenKey
 import hu.ait.maral.fairshare.ui.screen.home.HomeScreen
+import hu.ait.maral.fairshare.ui.screen.notifications.NotificationsScreen
 import hu.ait.maral.fairshare.ui.screen.start.LoginScreen
 import hu.ait.maral.fairshare.ui.screen.start.SignUpScreen
 import hu.ait.maral.fairshare.ui.theme.FairShareTheme
@@ -75,7 +77,13 @@ fun NavGraph(modifier: Modifier) {
             }
             // HOME SCREEN
             entry<HomeScreenKey> {
-                HomeScreen()
+                HomeScreen(onNotificationsClick = {
+                    backStack.add(NotificationScreenKey)
+                })
+            }
+
+            entry<NotificationScreenKey>{
+                NotificationsScreen(onBack = { backStack.removeLastOrNull() })
             }
         }
     )

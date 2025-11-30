@@ -11,3 +11,6 @@ data class SignUpScreenKey(val email: String, val password: String): NavKey
 
 @Serializable
 data object HomeScreenKey : NavKey
+
+@Serializable
+data object NotificationScreenKey : NavKey
