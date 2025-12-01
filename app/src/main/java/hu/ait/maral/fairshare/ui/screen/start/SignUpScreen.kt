@@ -1,5 +1,6 @@
 package hu.ait.maral.fairshare.ui.screen.start
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -12,13 +13,14 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import hu.ait.maral.fairshare.data.User
 import kotlinx.coroutines.launch
 
 @Composable
@@ -33,23 +35,41 @@ fun SignUpScreen(
     var phone by rememberSaveable { mutableStateOf("") }
     var email by rememberSaveable { mutableStateOf(defaultEmail) }
     var password by rememberSaveable { mutableStateOf(defaultPassword) }
-    var confirmPassword by rememberSaveable { mutableStateOf(defaultPassword) }
+    var confirmPassword by rememberSaveable { mutableStateOf("") }
     var showPassword by rememberSaveable { mutableStateOf(false) }
     var showPasswordConfirm by rememberSaveable { mutableStateOf(false) }
-
-    // For simplicity, let's just allow entering one payment method here
     var venmo by rememberSaveable { mutableStateOf("") }
 
-    val coroutineScope = rememberCoroutineScope()
+    // Validation states
+    var nameError by remember { mutableStateOf(false) }
+    var emailError by remember { mutableStateOf(false) }
+    var passwordError by remember { mutableStateOf(false) }
+    var confirmPasswordError by remember { mutableStateOf(false) }
 
-    Box(Modifier.fillMaxSize()) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFFFE4EC))  // baby pink
+    ) {
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 20.dp)
+        )
 
         Text(
             text = "Create Your FairShare Account",
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .padding(top = 50.dp),
-            fontSize = 28.sp
+            fontSize = 28.sp,
+            fontFamily = FontFamily.Cursive,
+            color = Color(0xFF008F5A) // matcha
         )
 
         Column(
@@ -60,14 +80,22 @@ fun SignUpScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
+            // NAME
             OutlinedTextField(
                 value = name,
-                onValueChange = { name = it },
+                onValueChange = {
+                    name = it
+                    nameError = it.isBlank()
+                },
                 label = { Text("Full Name") },
                 singleLine = true,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                isError = nameError
             )
 
+            Spacer(Modifier.height(5.dp))
+
+            // PHONE
             OutlinedTextField(
                 value = phone,
                 onValueChange = { phone = it },
@@ -77,19 +105,32 @@ fun SignUpScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            Spacer(Modifier.height(5.dp))
+
+            // EMAIL
             OutlinedTextField(
                 value = email,
-                onValueChange = { email = it },
+                onValueChange = {
+                    email = it
+                    emailError = !it.contains("@")
+                },
                 label = { Text("Email") },
-                leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
+                leadingIcon = { Icon(Icons.Default.Email, null) },
                 singleLine = true,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                isError = emailError
             )
 
+            Spacer(Modifier.height(5.dp))
+
+            // PASSWORD
             OutlinedTextField(
                 value = password,
-                onValueChange = { password = it },
-                label = { Text("Password") },
+                onValueChange = {
+                    password = it
+                    passwordError = it.length < 6
+                },
+                label = { Text("Password (min 6 chars)") },
                 singleLine = true,
                 visualTransformation =
                     if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
@@ -97,16 +138,23 @@ fun SignUpScreen(
                     IconButton(onClick = { showPassword = !showPassword }) {
                         Icon(
                             imageVector = if (showPassword) Icons.Default.Clear else Icons.Default.Add,
-                            contentDescription = null
+                            null
                         )
                     }
                 },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                isError = passwordError
             )
 
+            Spacer(Modifier.height(5.dp))
+
+            // CONFIRM PASSWORD
             OutlinedTextField(
                 value = confirmPassword,
-                onValueChange = { confirmPassword = it },
+                onValueChange = {
+                    confirmPassword = it
+                    confirmPasswordError = it != password
+                },
                 label = { Text("Confirm Password") },
                 singleLine = true,
                 visualTransformation =
@@ -115,16 +163,21 @@ fun SignUpScreen(
                     IconButton(onClick = { showPasswordConfirm = !showPasswordConfirm }) {
                         Icon(
                             imageVector = if (showPasswordConfirm) Icons.Default.Clear else Icons.Default.Add,
-                            contentDescription = null
+                            null
                         )
                     }
                 },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                isError = confirmPasswordError
             )
 
+            Spacer(Modifier.height(5.dp))
+
+            // VENMO
             OutlinedTextField(
                 value = venmo,
                 onValueChange = { venmo = it },
+                placeholder = { Text("fairshare123") },
                 label = { Text("Venmo Username (optional)") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
@@ -132,52 +185,94 @@ fun SignUpScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
+            // BUTTONS
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                OutlinedButton(onClick = { onNavigateBack() }) {
-                    Text("Back")
-                }
 
-                OutlinedButton(onClick = {
-                    if (password != confirmPassword) return@OutlinedButton
+                OutlinedButton(
+                    onClick = onNavigateBack,
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        containerColor = Color(0xFF98C9A3)
+                    )
+                ) { Text("Back", color = Color.White) }
 
-                    coroutineScope.launch {
-                        val paymentMethods = mutableMapOf<String, String>()
-                        if (venmo.isNotBlank()) paymentMethods["Venmo"] = venmo
+                OutlinedButton(
+                    onClick = {
+                        // Validate on click
+                        nameError = name.isBlank()
+                        emailError = !email.contains("@")
+                        passwordError = password.length < 6
+                        confirmPasswordError = confirmPassword != password
 
-                        viewModel.registerUser(
-                            name = name,
-                            email = email,
-                            password = password,
-                            phone = if (phone.isNotBlank()) phone else null,
-                            paymentMethods = paymentMethods
-                        )
-                    }
-                }) {
-                    Text("Sign Up")
-                }
+                        if (nameError || emailError || passwordError || confirmPasswordError) {
+                            scope.launch {
+                                snackbarHostState.showSnackbar(
+                                    "Please fix the highlighted errors.",
+                                    withDismissAction = true
+                                )
+                            }
+                            return@OutlinedButton
+                        }
+
+                        scope.launch {
+                            val paymentMethods = mutableMapOf<String, String>()
+                            if (venmo.isNotBlank()) paymentMethods["Venmo"] = venmo
+
+                            viewModel.registerUser(
+                                name = name,
+                                email = email,
+                                password = password,
+                                phone = phone.ifBlank { null },
+                                paymentMethods = paymentMethods
+                            )
+                        }
+                    },
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        containerColor = Color(0xFF98C9A3) // matcha
+                    )
+                ) { Text("Sign Up", color = Color.White) }
             }
         }
 
-        Column(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 50.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            when (viewModel.signUpUiState) {
-                is SignUpUiState.Error -> Text(
-                    text = "Error: ${(viewModel.signUpUiState as SignUpUiState.Error).errorMessage}"
-                )
-                is SignUpUiState.Loading -> CircularProgressIndicator()
-                is SignUpUiState.RegisterSuccess -> {
-                    Text("Account created successfully!")
-                    onRegisterSuccess()
+        // UI STATE HANDLING
+        when (val state = viewModel.signUpUiState) {
+
+            is SignUpUiState.Error -> {
+                LaunchedEffect(state) {
+                    snackbarHostState.showSnackbar(
+                        state.errorMessage ?: "Unknown error.",
+                        withDismissAction = true
+                    )
                 }
-                else -> {}
             }
+
+            is SignUpUiState.RegisterSuccess -> {
+                LaunchedEffect(Unit) {
+                    snackbarHostState.showSnackbar(
+                        "Account created successfully!",
+                        withDismissAction = true
+                    )
+                }
+                onRegisterSuccess()
+            }
+
+            is SignUpUiState.Loading -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color(0x55FFFFFF))
+                        .align(Alignment.Center)
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.Center),
+                        color = Color(0xFF008F5A)
+                    )
+                }
+            }
+
+            else -> {}
         }
     }
 }

@@ -118,7 +118,7 @@ fun HomeScreen(
                                         it[index] = new
                                     }
                                 },
-                                placeholder = { Text("email@example.com") },
+                                placeholder = { Text("email@fairshare.com") },
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(bottom = 8.dp),
