@@ -19,6 +19,9 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import hu.ait.maral.fairshare.ui.theme.BackgroundPink
+import hu.ait.maral.fairshare.ui.theme.ButtonGreen
+import hu.ait.maral.fairshare.ui.theme.LogoGreen
 import kotlinx.coroutines.launch
 
 @Composable
@@ -38,7 +41,7 @@ fun LoginScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFFFE4EC))
+            .background(BackgroundPink)
     ) {
 
         // Snackbar Host
@@ -58,7 +61,7 @@ fun LoginScreen(
             fontSize = 34.sp,
             fontFamily = FontFamily.Cursive,
             // Custom green color for better UI :)
-            color = Color(0xFF008F5A)
+            color = LogoGreen
         )
 
         // Main Login Fields
@@ -85,7 +88,7 @@ fun LoginScreen(
                 label = { Text("Password") },
                 value = password,
                 onValueChange = { password = it },
-                placeholder = { Text("123456") },
+                placeholder = { Text("") },
                 singleLine = true,
                 visualTransformation =
                     if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
@@ -120,7 +123,7 @@ fun LoginScreen(
                         }
                     },
                     colors = ButtonDefaults.outlinedButtonColors(
-                        containerColor = Color(0xFF98C9A3)
+                        containerColor = ButtonGreen
                     )
                 ) {
                     Text("Login", color = Color.White)
@@ -130,7 +133,7 @@ fun LoginScreen(
                 OutlinedButton(
                     onClick = { onNavigateToRegister(email, password) },
                     colors = ButtonDefaults.outlinedButtonColors(
-                        containerColor = Color(0xFF98C9A3)
+                        containerColor = ButtonGreen
                     )
                 ) {
                     Text("Register", color = Color.White)
@@ -177,7 +180,7 @@ fun LoginScreen(
                 ) {
                     CircularProgressIndicator(
                         modifier = Modifier.align(Alignment.Center),
-                        color = Color(0xFF008F5A)
+                        color = LogoGreen
                     )
                 }
             }

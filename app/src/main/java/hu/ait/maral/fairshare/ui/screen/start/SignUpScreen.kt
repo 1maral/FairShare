@@ -21,6 +21,9 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import hu.ait.maral.fairshare.ui.theme.BackgroundPink
+import hu.ait.maral.fairshare.ui.theme.ButtonGreen
+import hu.ait.maral.fairshare.ui.theme.LogoGreen
 import kotlinx.coroutines.launch
 
 @Composable
@@ -52,7 +55,7 @@ fun SignUpScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFFFE4EC))  // baby pink
+            .background(BackgroundPink)
     ) {
 
         SnackbarHost(
@@ -69,7 +72,7 @@ fun SignUpScreen(
                 .padding(top = 50.dp),
             fontSize = 28.sp,
             fontFamily = FontFamily.Cursive,
-            color = Color(0xFF008F5A) // matcha
+            color = LogoGreen
         )
 
         Column(
@@ -194,7 +197,7 @@ fun SignUpScreen(
                 OutlinedButton(
                     onClick = onNavigateBack,
                     colors = ButtonDefaults.outlinedButtonColors(
-                        containerColor = Color(0xFF98C9A3)
+                        containerColor = ButtonGreen
                     )
                 ) { Text("Back", color = Color.White) }
 
@@ -230,7 +233,7 @@ fun SignUpScreen(
                         }
                     },
                     colors = ButtonDefaults.outlinedButtonColors(
-                        containerColor = Color(0xFF98C9A3) // matcha
+                        containerColor = ButtonGreen
                     )
                 ) { Text("Sign Up", color = Color.White) }
             }
@@ -267,7 +270,7 @@ fun SignUpScreen(
                 ) {
                     CircularProgressIndicator(
                         modifier = Modifier.align(Alignment.Center),
-                        color = Color(0xFF008F5A)
+                        color = LogoGreen
                     )
                 }
             }

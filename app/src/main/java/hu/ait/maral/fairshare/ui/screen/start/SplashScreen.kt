@@ -13,19 +13,19 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import hu.ait.maral.fairshare.R
+import hu.ait.maral.fairshare.ui.theme.BackgroundPink
+import hu.ait.maral.fairshare.ui.theme.ButtonGreen
 
 @Composable
 fun SplashScreen(
-    onSplashFinished: () -> Unit
+    onTimeout: () -> Unit
 ) {
-    val animationDuration = 3000  // 3 seconds
+    val animationDuration = 3000
 
-    // Animate left and right halves
     val leftOffset = remember { Animatable(0f) }
     val rightOffset = remember { Animatable(0f) }
 
     LaunchedEffect(Unit) {
-        // Move left to left, right to right
         leftOffset.animateTo(
             targetValue = -500f,
             animationSpec = tween(durationMillis = animationDuration, easing = LinearOutSlowInEasing)
@@ -35,36 +35,32 @@ fun SplashScreen(
             animationSpec = tween(durationMillis = animationDuration, easing = LinearOutSlowInEasing)
         )
 
-        // Wait a bit then navigate
         delay(300)
-        onSplashFinished()
+        onTimeout()
     }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFFFE4EC)) // baby pink background
+            .background(BackgroundPink)
     ) {
-        // Left panel
         Box(
             modifier = Modifier
                 .fillMaxHeight()
                 .fillMaxWidth(0.5f)
                 .offset(x = leftOffset.value.dp)
-                .background(Color(0xFF98C9A3)) // matcha green
+                .background(ButtonGreen)
         )
 
-        // Right panel
         Box(
             modifier = Modifier
                 .fillMaxHeight()
                 .fillMaxWidth(0.5f)
                 .align(Alignment.TopEnd)
                 .offset(x = rightOffset.value.dp)
-                .background(Color(0xFF98C9A3)) // matcha green
+                .background(ButtonGreen)
         )
 
-        // Logo appears in center
         Image(
             painter = painterResource(id = R.drawable.logo),
             contentDescription = "FairShare Logo",

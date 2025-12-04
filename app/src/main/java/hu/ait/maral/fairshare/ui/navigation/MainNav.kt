@@ -14,3 +14,6 @@ data object HomeScreenKey : NavKey
 
 @Serializable
 data object NotificationScreenKey : NavKey
+
+@Serializable
+data object SplashScreenKey : NavKey

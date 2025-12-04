@@ -19,10 +19,12 @@ import hu.ait.maral.fairshare.ui.navigation.HomeScreenKey
 import hu.ait.maral.fairshare.ui.navigation.LoginScreenKey
 import hu.ait.maral.fairshare.ui.navigation.NotificationScreenKey
 import hu.ait.maral.fairshare.ui.navigation.SignUpScreenKey
+import hu.ait.maral.fairshare.ui.navigation.SplashScreenKey
 import hu.ait.maral.fairshare.ui.screen.home.HomeScreen
 import hu.ait.maral.fairshare.ui.screen.notifications.NotificationsScreen
 import hu.ait.maral.fairshare.ui.screen.start.LoginScreen
 import hu.ait.maral.fairshare.ui.screen.start.SignUpScreen
+import hu.ait.maral.fairshare.ui.screen.start.SplashScreen
 import hu.ait.maral.fairshare.ui.theme.FairShareTheme
 
 class MainActivity : ComponentActivity() {
@@ -42,7 +44,7 @@ class MainActivity : ComponentActivity() {
 }
 @Composable
 fun NavGraph(modifier: Modifier) {
-    val backStack = rememberNavBackStack(LoginScreenKey)
+    val backStack = rememberNavBackStack(SplashScreenKey)
 
     NavDisplay(
         backStack = backStack,
@@ -53,7 +55,15 @@ fun NavGraph(modifier: Modifier) {
             rememberViewModelStoreNavEntryDecorator()
         ),
         entryProvider = entryProvider {
-
+            // SPLASH SCREEN
+            entry<SplashScreenKey> {
+                SplashScreen(
+                    onTimeout = {
+                        backStack.removeLastOrNull()
+                        backStack.add(LoginScreenKey)
+                    }
+                )
+            }
             // LOGIN SCREEN
             entry<LoginScreenKey> {
                 LoginScreen(

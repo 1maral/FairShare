@@ -1,5 +1,6 @@
 package hu.ait.maral.fairshare.ui.screen.notifications
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -7,39 +8,62 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import hu.ait.maral.fairshare.data.Group
+import hu.ait.maral.fairshare.ui.theme.BackgroundPink
+import hu.ait.maral.fairshare.ui.theme.ButtonGreen
+import hu.ait.maral.fairshare.ui.theme.LogoGreen
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotificationsScreen(
     viewModel: NotificationsViewModel = viewModel(),
-    onBack: () -> Unit = {}   // MainActivity can pass backStack.removeLastOrNull()
+    onBack: () -> Unit = {}
 ) {
     val pendingGroups = viewModel.pendingGroups.value
     val isLoading = viewModel.isLoading.value
     val errorMessage = viewModel.errorMessage.value
 
-    LaunchedEffect(Unit) {
-        viewModel.loadPendingGroups()
-    }
+    val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(Unit) { viewModel.loadPendingGroups() }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = "Notifications") },
+                title = {
+                    Text(
+                        text = "Notifications",
+                        fontFamily = FontFamily.Cursive,
+                        color = LogoGreen
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = { onBack() }) {
                         Icon(
                             imageVector = Icons.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = "Back",
+                            tint = LogoGreen
                         )
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = BackgroundPink,
+                    titleContentColor = LogoGreen,
+                    navigationIconContentColor = LogoGreen,
+                    actionIconContentColor = LogoGreen
+                )
             )
-        }
+        },
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+        containerColor = BackgroundPink
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -49,18 +73,27 @@ fun NotificationsScreen(
         ) {
             when {
                 isLoading -> {
-                    CircularProgressIndicator()
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = LogoGreen)
+                    }
                 }
 
                 errorMessage != null -> {
-                    Text(
-                        text = "Error: $errorMessage",
-                        color = MaterialTheme.colorScheme.error
-                    )
+                    LaunchedEffect(errorMessage) {
+                        coroutineScope.launch {
+                            snackbarHostState.showSnackbar(
+                                message = errorMessage,
+                                withDismissAction = true
+                            )
+                        }
+                    }
                 }
 
                 pendingGroups.isEmpty() -> {
-                    Text("No pending group invitations.")
+                    Text("No pending group invitations.", color = LogoGreen)
                 }
 
                 else -> {
@@ -68,8 +101,24 @@ fun NotificationsScreen(
                         items(pendingGroups) { group ->
                             NotificationGroupCard(
                                 group = group,
-                                onAccept = { viewModel.acceptGroup(group) },
-                                onDecline = { viewModel.declineGroup(group) }
+                                onAccept = {
+                                    viewModel.acceptGroup(group)
+                                    coroutineScope.launch {
+                                        snackbarHostState.showSnackbar(
+                                            message = "Joined ${group.name}!",
+                                            withDismissAction = true
+                                        )
+                                    }
+                                },
+                                onDecline = {
+                                    viewModel.declineGroup(group)
+                                    coroutineScope.launch {
+                                        snackbarHostState.showSnackbar(
+                                            message = "Declined ${group.name}.",
+                                            withDismissAction = true
+                                        )
+                                    }
+                                }
                             )
                         }
                     }
@@ -89,35 +138,35 @@ fun NotificationGroupCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFE0E6)) // light strawberry pink
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
+        Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 text = group.name,
-                style = MaterialTheme.typography.titleMedium
+                style = MaterialTheme.typography.titleMedium,
+                fontFamily = FontFamily.Cursive,
+                color = LogoGreen
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            val membersText =
-                if (group.members.isEmpty()) "No members yet"
-                else "Members: ${group.members.joinToString(", ")}"
-
-            Text(text = membersText)
+            val membersText = if (group.members.isEmpty()) "No members yet"
+            else "Members: ${group.members.joinToString(", ")}"
+            Text(membersText, color = LogoGreen)
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Button(onClick = onAccept) {
-                    Text("Accept")
-                }
-                OutlinedButton(onClick = onDecline) {
-                    Text("Decline")
-                }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(
+                    onClick = onAccept,
+                    colors = ButtonDefaults.buttonColors(containerColor = ButtonGreen)
+                ) { Text("Accept", color = Color.White) }
+
+                OutlinedButton(
+                    onClick = onDecline,
+                    colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.White)
+                ) { Text("Decline", color = ButtonGreen) }
             }
         }
     }
