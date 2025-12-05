@@ -6,7 +6,8 @@ data class User(
     val email: String = "",
     val phoneNumber: String? = null,
     val profilePictureUrl: String? = null,
-    // "Zelle" -> "@username"
+    val preferredCurrency: String = "USD",
+    // "Zelle" -> "@username", "Venmo" -> "username123"
     val paymentMethods: Map<String, String> = emptyMap(),
     val createdAt: Long = System.currentTimeMillis(),
     val lastLogin: Long = System.currentTimeMillis()

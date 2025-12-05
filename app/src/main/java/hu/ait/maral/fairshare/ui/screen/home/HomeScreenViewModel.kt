@@ -53,7 +53,6 @@ class HomeScreenViewModel : ViewModel() {
             return
         }
 
-        // Clean invited emails (the ones you typed in the dialog)
         val invitedEmails = buildSet<String> {
             memberEmails.forEach { raw ->
                 val clean = raw.trim().lowercase()
@@ -64,7 +63,6 @@ class HomeScreenViewModel : ViewModel() {
         isLoading.value = true
         errorMessage.value = null
 
-        // Helper: fetch creator's display name from Firestore users or fallback
         val creatorUid = currentUser.uid
         val usersRef = db.collection("users").document(creatorUid)
 
@@ -74,14 +72,13 @@ class HomeScreenViewModel : ViewModel() {
                 ?: currentUser.email
                 ?: "Unknown"
 
-            // If no invited emails -> group with just creator
             if (invitedEmails.isEmpty()) {
                 val groupData = hashMapOf(
                     "name" to name,
-                    "members" to listOf(creatorName),        // only creator
-                    "memberIds" to listOf(creatorUid),       // only creator
+                    "members" to listOf(creatorName),
+                    "memberIds" to listOf(creatorUid),
                     "pendingMemberIds" to emptyList<String>(),
-                    "balances" to listOf(0.0)                // creator starts at 0
+                    "balances" to listOf(0.0)
                 )
 
                 db.collection("groups")
@@ -98,7 +95,6 @@ class HomeScreenViewModel : ViewModel() {
                 return@addOnSuccessListener
             }
 
-            // We DO have invited emails → look up their UIDs
             val emailToUid = mutableMapOf<String, String>()
             val invalidEmails = mutableListOf<String>()
             var processed = 0
@@ -112,7 +108,6 @@ class HomeScreenViewModel : ViewModel() {
                     return
                 }
 
-                // Creator is the ONLY confirmed member at creation time
                 val confirmedMemberIds = listOf(creatorUid)
                 val confirmedMemberNames = listOf(creatorName)
                 val confirmedBalances = listOf(0.0)
@@ -123,7 +118,7 @@ class HomeScreenViewModel : ViewModel() {
 
                 val groupData = hashMapOf(
                     "name" to name,
-                    "members" to confirmedMemberNames,   // only confirmed members
+                    "members" to confirmedMemberNames,
                     "memberIds" to confirmedMemberIds,
                     "pendingMemberIds" to pendingMemberIds,
                     "balances" to confirmedBalances
@@ -173,5 +168,4 @@ class HomeScreenViewModel : ViewModel() {
             errorMessage.value = e.localizedMessage
         }
     }
-
 }

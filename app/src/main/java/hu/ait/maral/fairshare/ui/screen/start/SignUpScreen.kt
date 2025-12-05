@@ -1,31 +1,39 @@
 package hu.ait.maral.fairshare.ui.screen.start
 
+import android.net.Uri
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
+import hu.ait.maral.fairshare.data.User
 import hu.ait.maral.fairshare.ui.theme.BackgroundPink
 import hu.ait.maral.fairshare.ui.theme.ButtonGreen
 import hu.ait.maral.fairshare.ui.theme.LogoGreen
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
+@RequiresApi(Build.VERSION_CODES.P)
 @Composable
 fun SignUpScreen(
     viewModel: SignUpViewModel = viewModel(),
@@ -34,6 +42,7 @@ fun SignUpScreen(
     onRegisterSuccess: () -> Unit,
     onNavigateBack: () -> Unit
 ) {
+    // form state
     var name by rememberSaveable { mutableStateOf("") }
     var phone by rememberSaveable { mutableStateOf("") }
     var email by rememberSaveable { mutableStateOf(defaultEmail) }
@@ -41,241 +50,312 @@ fun SignUpScreen(
     var confirmPassword by rememberSaveable { mutableStateOf("") }
     var showPassword by rememberSaveable { mutableStateOf(false) }
     var showPasswordConfirm by rememberSaveable { mutableStateOf(false) }
-    var venmo by rememberSaveable { mutableStateOf("") }
+    var preferredCurrency by rememberSaveable { mutableStateOf("USD") }
 
-    // Validation states
-    var nameError by remember { mutableStateOf(false) }
-    var emailError by remember { mutableStateOf(false) }
-    var passwordError by remember { mutableStateOf(false) }
-    var confirmPasswordError by remember { mutableStateOf(false) }
+    // Payment methods map
+    val paymentMethods = remember { mutableStateMapOf<String, String>() }
+    var newPaymentName by rememberSaveable { mutableStateOf("") }
+    var newPaymentValue by rememberSaveable { mutableStateOf("") }
 
+    // avatar picking
+    val context = LocalContext.current
+    var avatarUri by remember { mutableStateOf<Uri?>(null) }
+    val pickImageLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        avatarUri = uri
+    }
+
+    // UI helpers
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(BackgroundPink)
-    ) {
+    // Observe viewModel state
+    val state = viewModel.signUpUiState
 
-        SnackbarHost(
-            hostState = snackbarHostState,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 20.dp)
-        )
-
-        Text(
-            text = "Create Your FairShare Account",
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = 50.dp),
-            fontSize = 28.sp,
-            fontFamily = FontFamily.Cursive,
-            color = LogoGreen
-        )
-
-        Column(
-            modifier = Modifier
-                .align(Alignment.Center)
-                .fillMaxWidth(0.85f),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-
-            // NAME
-            OutlinedTextField(
-                value = name,
-                onValueChange = {
-                    name = it
-                    nameError = it.isBlank()
-                },
-                label = { Text("Full Name") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                isError = nameError
-            )
-
-            Spacer(Modifier.height(5.dp))
-
-            // PHONE
-            OutlinedTextField(
-                value = phone,
-                onValueChange = { phone = it },
-                label = { Text("Phone Number") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(Modifier.height(5.dp))
-
-            // EMAIL
-            OutlinedTextField(
-                value = email,
-                onValueChange = {
-                    email = it
-                    emailError = !it.contains("@")
-                },
-                label = { Text("Email") },
-                leadingIcon = { Icon(Icons.Default.Email, null) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                isError = emailError
-            )
-
-            Spacer(Modifier.height(5.dp))
-
-            // PASSWORD
-            OutlinedTextField(
-                value = password,
-                onValueChange = {
-                    password = it
-                    passwordError = it.length < 6
-                },
-                label = { Text("Password (min 6 chars)") },
-                singleLine = true,
-                visualTransformation =
-                    if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
-                trailingIcon = {
-                    IconButton(onClick = { showPassword = !showPassword }) {
-                        Icon(
-                            imageVector = if (showPassword) Icons.Default.Clear else Icons.Default.Add,
-                            null
-                        )
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                isError = passwordError
-            )
-
-            Spacer(Modifier.height(5.dp))
-
-            // CONFIRM PASSWORD
-            OutlinedTextField(
-                value = confirmPassword,
-                onValueChange = {
-                    confirmPassword = it
-                    confirmPasswordError = it != password
-                },
-                label = { Text("Confirm Password") },
-                singleLine = true,
-                visualTransformation =
-                    if (showPasswordConfirm) VisualTransformation.None else PasswordVisualTransformation(),
-                trailingIcon = {
-                    IconButton(onClick = { showPasswordConfirm = !showPasswordConfirm }) {
-                        Icon(
-                            imageVector = if (showPasswordConfirm) Icons.Default.Clear else Icons.Default.Add,
-                            null
-                        )
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                isError = confirmPasswordError
-            )
-
-            Spacer(Modifier.height(5.dp))
-
-            // VENMO
-            OutlinedTextField(
-                value = venmo,
-                onValueChange = { venmo = it },
-                placeholder = { Text("fairshare123") },
-                label = { Text("Venmo Username (optional)") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // BUTTONS
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-
-                OutlinedButton(
-                    onClick = onNavigateBack,
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        containerColor = ButtonGreen
-                    )
-                ) { Text("Back", color = Color.White) }
-
-                OutlinedButton(
-                    onClick = {
-                        // Validate on click
-                        nameError = name.isBlank()
-                        emailError = !email.contains("@")
-                        passwordError = password.length < 6
-                        confirmPasswordError = confirmPassword != password
-
-                        if (nameError || emailError || passwordError || confirmPasswordError) {
-                            scope.launch {
-                                snackbarHostState.showSnackbar(
-                                    "Please fix the highlighted errors.",
-                                    withDismissAction = true
+    // Scaffold so we can put TopAppBar with avatar
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        topBar = {
+            TopAppBar(
+                title = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        // Avatar left of title
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clickable { pickImageLauncher.launch("image/*") }
+                        ) {
+                            if (avatarUri != null) {
+                                AsyncImage(
+                                    model = avatarUri,
+                                    contentDescription = "avatar",
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            } else {
+                                // placeholder icon
+                                Icon(
+                                    imageVector = Icons.Default.Person,
+                                    contentDescription = "select avatar",
+                                    tint = LogoGreen
                                 )
                             }
-                            return@OutlinedButton
                         }
 
-                        scope.launch {
-                            val paymentMethods = mutableMapOf<String, String>()
-                            if (venmo.isNotBlank()) paymentMethods["Venmo"] = venmo
+                        Spacer(modifier = Modifier.width(8.dp))
 
-                            viewModel.registerUser(
-                                name = name,
-                                email = email,
-                                password = password,
-                                phone = phone.ifBlank { null },
-                                paymentMethods = paymentMethods
-                            )
+                        Text(
+                            text = "Create Your FairShare Account",
+                            fontSize = 18.sp,
+                            color = LogoGreen
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = BackgroundPink,
+                    titleContentColor = LogoGreen
+                )
+            )
+        },
+        containerColor = BackgroundPink,
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
+    ) { paddingValues ->
+
+        Box(
+            modifier = Modifier
+                .padding(paddingValues)
+                .fillMaxSize()
+                .background(BackgroundPink)
+        ) {
+            LazyColumn(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .fillMaxWidth(0.9f),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                contentPadding = PaddingValues(vertical = 18.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Avatar preview + upload button (redundant with topbar, but nice)
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(modifier = Modifier.size(120.dp)) {
+                            if (avatarUri != null) {
+                                AsyncImage(
+                                    model = avatarUri,
+                                    contentDescription = "avatar preview",
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Default.Person,
+                                    contentDescription = "avatar placeholder",
+                                    tint = LogoGreen,
+                                    modifier = Modifier.size(80.dp)
+                                )
+                            }
                         }
-                    },
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        containerColor = ButtonGreen
-                    )
-                ) { Text("Sign Up", color = Color.White) }
-            }
-        }
 
-        // UI STATE HANDLING
-        when (val state = viewModel.signUpUiState) {
+                        Spacer(modifier = Modifier.width(12.dp))
 
-            is SignUpUiState.Error -> {
-                LaunchedEffect(state) {
-                    snackbarHostState.showSnackbar(
-                        state.errorMessage ?: "Unknown error.",
-                        withDismissAction = true
+                        OutlinedButton(onClick = { pickImageLauncher.launch("image/*") }) {
+                            Text("Choose Avatar")
+                        }
+                    }
+                }
+
+                // Name
+                item {
+                    OutlinedTextField(
+                        value = name,
+                        onValueChange = { name = it },
+                        label = { Text("Full Name") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
                     )
+                }
+
+                // Phone
+                item {
+                    OutlinedTextField(
+                        value = phone,
+                        onValueChange = { phone = it },
+                        label = { Text("Phone Number") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                // Email
+                item {
+                    OutlinedTextField(
+                        value = email,
+                        onValueChange = { email = it },
+                        label = { Text("Email") },
+                        leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                // Password
+                item {
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = { Text("Password") },
+                        singleLine = true,
+                        visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                        trailingIcon = {
+                            IconButton(onClick = { showPassword = !showPassword }) {
+                                Icon(imageVector = if (showPassword) Icons.Default.Clear else Icons.Default.Add, contentDescription = null)
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                // Confirm password
+                item {
+                    OutlinedTextField(
+                        value = confirmPassword,
+                        onValueChange = { confirmPassword = it },
+                        label = { Text("Confirm Password") },
+                        singleLine = true,
+                        visualTransformation = if (showPasswordConfirm) VisualTransformation.None else PasswordVisualTransformation(),
+                        trailingIcon = {
+                            IconButton(onClick = { showPasswordConfirm = !showPasswordConfirm }) {
+                                Icon(imageVector = if (showPasswordConfirm) Icons.Default.Clear else Icons.Default.Add, contentDescription = null)
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                // Preferred currency
+                item {
+                    OutlinedTextField(
+                        value = preferredCurrency,
+                        onValueChange = { preferredCurrency = it.uppercase() },
+                        label = { Text("Preferred Currency (USD/EUR...)") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                // Payment methods header + add row
+                item {
+                    Text("Payment methods (add type + id)", color = LogoGreen)
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(
+                            value = newPaymentName,
+                            onValueChange = { newPaymentName = it },
+                            placeholder = { Text("Zelle / Venmo / PayPal") },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f)
+                        )
+                        OutlinedTextField(
+                            value = newPaymentValue,
+                            onValueChange = { newPaymentValue = it },
+                            placeholder = { Text("username / email / id") },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f)
+                        )
+                        OutlinedButton(onClick = {
+                            // add if both fields present
+                            if (newPaymentName.isNotBlank() && newPaymentValue.isNotBlank()) {
+                                paymentMethods[newPaymentName] = newPaymentValue
+                                newPaymentName = ""
+                                newPaymentValue = ""
+                            } else {
+                                scope.launch { snackbarHostState.showSnackbar("Fill both fields to add a payment method") }
+                            }
+                        }) {
+                            Icon(Icons.Default.Add, contentDescription = "add")
+                        }
+                    }
+                }
+
+                // show added payment methods with delete option
+                item {
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+                items(paymentMethods.entries.toList()) { entry ->
+                    val key = entry.key
+                    val value = entry.value
+                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(key, color = LogoGreen)
+                            Text(value)
+                        }
+                        IconButton(onClick = { paymentMethods.remove(key) }) {
+                            Icon(imageVector = Icons.Default.Delete, contentDescription = "delete", tint = MaterialTheme.colorScheme.error)
+                        }
+                    }
+                }
+
+                // action buttons
+                item {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        OutlinedButton(onClick = onNavigateBack, colors = ButtonDefaults.outlinedButtonColors(containerColor = ButtonGreen)) {
+                            Text("Back", color = MaterialTheme.colorScheme.onPrimary)
+                        }
+
+                        OutlinedButton(
+                            onClick = {
+                                if (password != confirmPassword) {
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar("Passwords do not match")
+                                    }
+                                    return@OutlinedButton
+                                }
+
+                                // Call updated ViewModel directly
+                                viewModel.registerUser(
+                                    contentResolver = context.contentResolver,
+                                    avatarUri = avatarUri,
+                                    name = name,
+                                    email = email,
+                                    password = password,
+                                    phone = phone.ifBlank { null },
+                                    paymentMethods = paymentMethods.toMap(),
+                                    preferredCurrency = preferredCurrency
+                                )
+                    }, colors = ButtonDefaults.outlinedButtonColors(containerColor = ButtonGreen)) {
+                            Text("Sign Up", color = MaterialTheme.colorScheme.onPrimary)
+                        }
+                    }
                 }
             }
 
-            is SignUpUiState.RegisterSuccess -> {
-                LaunchedEffect(Unit) {
-                    snackbarHostState.showSnackbar(
-                        "Account created successfully!",
-                        withDismissAction = true
-                    )
+            // UI state -> snackbars / loading
+            when (state) {
+                is SignUpUiState.Error -> {
+                    LaunchedEffect(state) { scope.launch { snackbarHostState.showSnackbar(state.errorMessage ?: "Unknown error") } }
                 }
-                onRegisterSuccess()
-            }
-
-            is SignUpUiState.Loading -> {
-                Box(
-                    modifier = Modifier
+                is SignUpUiState.RegisterSuccess -> {
+                    LaunchedEffect(Unit) {
+                        scope.launch { snackbarHostState.showSnackbar("Registered successfully!") }
+                        onRegisterSuccess()
+                    }
+                }
+                is SignUpUiState.Loading -> {
+                    Box(modifier = Modifier
                         .fillMaxSize()
-                        .background(Color(0x55FFFFFF))
-                        .align(Alignment.Center)
-                ) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.Center),
-                        color = LogoGreen
-                    )
+                        .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f)),
+                        contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = LogoGreen)
+                    }
                 }
+                else -> {}
             }
-
-            else -> {}
         }
     }
 }
