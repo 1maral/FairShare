@@ -17,3 +17,6 @@ data object NotificationScreenKey : NavKey
 
 @Serializable
 data object SplashScreenKey : NavKey
+
+@Serializable
+data class RoomScreenKey(val groupId: String): NavKey

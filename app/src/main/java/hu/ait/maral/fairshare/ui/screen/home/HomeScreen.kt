@@ -24,6 +24,7 @@ import hu.ait.maral.fairshare.ui.theme.ButtonGreen
 import hu.ait.maral.fairshare.ui.theme.LogoGreen
 
 data class GroupUi(
+    val groupId: String,
     val name: String,
     val members: List<String>,
     val balances: List<Double>
@@ -34,7 +35,8 @@ data class GroupUi(
 fun HomeScreen(
     viewModel: HomeScreenViewModel = viewModel(),
     onNotificationsClick: () -> Unit = {},
-    onProfileClick: () -> Unit = {}
+    onProfileClick: () -> Unit = {},
+    onRoomClick: (String) -> Unit
 ) {
     val groups = viewModel.groups.value
     val isLoading = viewModel.isLoading.value
@@ -108,7 +110,9 @@ fun HomeScreen(
                     items(groups) { group ->
                         GroupCard(
                             modifier = Modifier.fillMaxWidth(),
+                            onClick = { onRoomClick(group.groupId) },
                             group = GroupUi(
+                                groupId = group.groupId,
                                 name = group.name,
                                 members = group.members,
                                 balances = group.balances
@@ -194,11 +198,13 @@ fun HomeScreen(
 @Composable
 fun GroupCard(
     modifier: Modifier = Modifier,
+    onClick: () -> Unit,
     group: GroupUi
 ) {
     val memberCount = minOf(group.members.size, group.balances.size)
 
     Card(
+        onClick = onClick,
         modifier = modifier
             .padding(vertical = 8.dp),
         elevation = CardDefaults.cardElevation(6.dp),
