@@ -145,8 +145,7 @@ fun NotificationGroupCard(
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 text = group.name,
-                style = MaterialTheme.typography.titleMedium,
-                fontFamily = FontFamily.Cursive,
+                fontWeight = FontWeight.ExtraBold,
                 color = LogoGreen
             )
 
