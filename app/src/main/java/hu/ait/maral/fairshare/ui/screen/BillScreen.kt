@@ -232,6 +232,7 @@ fun BillScreen(
                     title = billTitle,
                     billItems = billItems,
                     itemAssignments = itemAssignments,
+                    splitMethod = splitMethod
                 ) {
                     // After upload completes → update balances
                     viewModel.updateBalance(
