@@ -23,4 +23,4 @@ data object SplashScreenKey : NavKey
 data class RoomScreenKey(val groupId: String): NavKey
 
 @Serializable
-data class ProfileScreenKey(val userId: String): NavKey
+data object ProfileScreenKey: NavKey

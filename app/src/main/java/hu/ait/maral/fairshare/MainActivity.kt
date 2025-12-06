@@ -98,14 +98,12 @@ fun NavGraph(modifier: Modifier) {
 
             // HOME SCREEN
             entry<HomeScreenKey> {
-                val currentUser = FirebaseAuth.getInstance().currentUser
-                val userId = currentUser?.uid ?: ""
 
                 HomeScreen(onNotificationsClick = {
                     backStack.add(NotificationScreenKey)
                 }, onRoomClick = { groupId ->
                     backStack.add(RoomScreenKey(groupId))
-                }, onProfileClick = {backStack.add(ProfileScreenKey(userId))})
+                }, onProfileClick = {backStack.add(ProfileScreenKey)})
             }
 
             entry<NotificationScreenKey>{
@@ -116,7 +114,7 @@ fun NavGraph(modifier: Modifier) {
                 RoomScreen(groupId = key.groupId)
             }
 
-            entry<ProfileScreenKey> { key -> ProfileScreen( userId = key.userId)}
+            entry<ProfileScreenKey> { key -> ProfileScreen()}
         }
     )
 }
