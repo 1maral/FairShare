@@ -27,6 +27,7 @@ import hu.ait.maral.fairshare.ui.navigation.ProfileScreenKey
 import hu.ait.maral.fairshare.ui.navigation.RoomScreenKey
 import hu.ait.maral.fairshare.ui.navigation.SignUpScreenKey
 import hu.ait.maral.fairshare.ui.navigation.SplashScreenKey
+import hu.ait.maral.fairshare.ui.navigation.TestScreenKey
 import hu.ait.maral.fairshare.ui.screen.BillScreen
 import hu.ait.maral.fairshare.ui.screen.RoomScreen
 import hu.ait.maral.fairshare.ui.screen.home.HomeScreen
@@ -35,6 +36,7 @@ import hu.ait.maral.fairshare.ui.screen.profile.ProfileScreen
 import hu.ait.maral.fairshare.ui.screen.start.LoginScreen
 import hu.ait.maral.fairshare.ui.screen.start.SignUpScreen
 import hu.ait.maral.fairshare.ui.screen.start.SplashScreen
+import hu.ait.maral.fairshare.ui.screen.test.RatesScreen
 import hu.ait.maral.fairshare.ui.theme.FairShareTheme
 
 class MainActivity : ComponentActivity() {
@@ -116,9 +118,12 @@ fun NavGraph(modifier: Modifier) {
                 RoomScreen(groupId = key.groupId,
                     onAddBillClick = { backStack.add(BillScreenKey) })
             }
-
             //PROFILE SCREEN
             entry<ProfileScreenKey> { key -> ProfileScreen()}
+
+            entry<TestScreenKey> {
+                RatesScreen()
+            }
 
             // BILL UPLOAD SCREEN
             entry<BillScreenKey> {
