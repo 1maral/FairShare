@@ -6,13 +6,11 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import hu.ait.maral.fairshare.data.Group
 import hu.ait.maral.fairshare.data.User
-import kotlin.jvm.java
 
 class HomeScreenViewModel : ViewModel() {
 
     var preferredCurrency = mutableStateOf("EUR")
         private set
-
 
     var groups = mutableStateOf<List<Group>>(emptyList())
         private set
@@ -28,17 +26,14 @@ class HomeScreenViewModel : ViewModel() {
 
     fun loadGroupsForUser() {
         val user = auth.currentUser ?: return
-
         isLoading.value = true
-        errorMessage.value = null
 
         db.collection("groups")
             .whereArrayContains("memberIds", user.uid)
             .get()
-            .addOnSuccessListener { snapshot ->
-                val result = snapshot.documents.mapNotNull { doc ->
-                    doc.toObject(Group::class.java)
-                        ?.copy(groupId = doc.id)
+            .addOnSuccessListener { snap ->
+                val result = snap.documents.mapNotNull { doc ->
+                    doc.toObject(Group::class.java)?.copy(groupId = doc.id)
                 }
                 groups.value = result
                 isLoading.value = false
@@ -50,140 +45,120 @@ class HomeScreenViewModel : ViewModel() {
     }
 
     fun createGroup(name: String, memberEmails: List<String>) {
-        val currentUser = auth.currentUser ?: return
+        val creator = auth.currentUser ?: return
+        val creatorUid = creator.uid
 
         if (name.isBlank()) {
             errorMessage.value = "Group name cannot be empty."
             return
         }
 
-        val invitedEmails = buildSet<String> {
-            memberEmails.forEach { raw ->
-                val clean = raw.trim().lowercase()
-                if (clean.isNotEmpty()) add(clean)
-            }
-        }.toList()
-
         isLoading.value = true
         errorMessage.value = null
 
-        val creatorUid = currentUser.uid
-        val usersRef = db.collection("users").document(creatorUid)
+        db.collection("users").document(creatorUid).get()
+            .addOnSuccessListener { userSnap ->
+                val creatorName =
+                    userSnap.getString("name") ?: creator.email ?: "Unknown"
 
-        usersRef.get().addOnSuccessListener { userSnap ->
-            val creatorName = userSnap.getString("name")
-                ?: currentUser.displayName
-                ?: currentUser.email
-                ?: "Unknown"
-
-            if (invitedEmails.isEmpty()) {
-                val groupData = hashMapOf(
-                    "name" to name,
-                    "members" to listOf(creatorName),
-                    "memberIds" to listOf(creatorUid),
-                    "pendingMemberIds" to emptyList<String>(),
-                    "balances" to listOf(0.0)
-                )
-
-                db.collection("groups")
-                    .add(groupData)
-                    .addOnSuccessListener {
-                        isLoading.value = false
-                        loadGroupsForUser()
-                    }
-                    .addOnFailureListener { e ->
-                        isLoading.value = false
-                        errorMessage.value = e.localizedMessage
-                    }
-
-                return@addOnSuccessListener
-            }
-
-            val emailToUid = mutableMapOf<String, String>()
-            val invalidEmails = mutableListOf<String>()
-            var processed = 0
-            val total = invitedEmails.size
-
-            fun finishValidation() {
-                if (invalidEmails.isNotEmpty()) {
-                    isLoading.value = false
-                    errorMessage.value =
-                        "These emails are not registered users: ${invalidEmails.joinToString(", ")}"
-                    return
-                }
-
-                val confirmedMemberIds = listOf(creatorUid)
-                val confirmedMemberNames = listOf(creatorName)
-                val confirmedBalances = listOf(0.0)
-
-                val pendingMemberIds = emailToUid.values
-                    .filter { it != creatorUid }
+                // CLEAN invited emails
+                val invitedEmails = memberEmails
+                    .map { it.trim().lowercase() }
+                    .filter { it.isNotBlank() }
                     .distinct()
 
-                val groupData = hashMapOf(
-                    "name" to name,
-                    "members" to confirmedMemberNames,
-                    "memberIds" to confirmedMemberIds,
-                    "pendingMemberIds" to pendingMemberIds,
-                    "balances" to confirmedBalances
-                )
-
-                db.collection("groups")
-                    .add(groupData)
-                    .addOnSuccessListener {
-                        isLoading.value = false
-                        loadGroupsForUser()
-                    }
-                    .addOnFailureListener { e ->
-                        isLoading.value = false
-                        errorMessage.value = e.localizedMessage
-                    }
-            }
-
-            for (email in invitedEmails) {
-                db.collection("users")
-                    .whereEqualTo("email", email)
-                    .limit(1)
-                    .get()
-                    .addOnSuccessListener { snapshot ->
-                        processed++
-                        val doc = snapshot.documents.firstOrNull()
-                        if (doc != null) {
-                            val uid = doc.getString("uid")
-                            if (!uid.isNullOrBlank()) {
-                                emailToUid[email] = uid
-                            } else {
-                                invalidEmails.add(email)
-                            }
-                        } else {
-                            invalidEmails.add(email)
+                // If no invited members → simple group with creator only
+                if (invitedEmails.isEmpty()) {
+                    val groupData = mapOf(
+                        "name" to name,
+                        "members" to listOf(creatorName),
+                        "memberIds" to listOf(creatorUid),
+                        "pendingMemberIds" to emptyList<String>(),
+                        "balances" to mapOf(creatorUid to 0.0) // NEW MAP FORMAT
+                    )
+                    db.collection("groups").add(groupData)
+                        .addOnSuccessListener {
+                            isLoading.value = false
+                            loadGroupsForUser()
                         }
+                        .addOnFailureListener {
+                            errorMessage.value = it.localizedMessage
+                            isLoading.value = false
+                        }
+                    return@addOnSuccessListener
+                }
 
-                        if (processed == total) finishValidation()
+                // Validate emails
+                val emailToUid = mutableMapOf<String, String>()
+                val invalid = mutableListOf<String>()
+                var processed = 0
+                val total = invitedEmails.size
+
+                fun finishValidation() {
+                    if (invalid.isNotEmpty()) {
+                        errorMessage.value =
+                            "Invalid users: ${invalid.joinToString()}"
+                        isLoading.value = false
+                        return
                     }
-                    .addOnFailureListener {
-                        processed++
-                        invalidEmails.add(email)
-                        if (processed == total) finishValidation()
-                    }
+
+                    val pendingIds = emailToUid.values
+                        .filter { it != creatorUid }
+                        .distinct()
+
+                    val groupData = mapOf(
+                        "name" to name,
+                        "members" to listOf(creatorName),
+                        "memberIds" to listOf(creatorUid),
+                        "pendingMemberIds" to pendingIds,
+                        "balances" to mapOf(creatorUid to 0.0) // ONLY creator has balance
+                    )
+
+                    db.collection("groups").add(groupData)
+                        .addOnSuccessListener {
+                            isLoading.value = false
+                            loadGroupsForUser()
+                        }
+                        .addOnFailureListener {
+                            errorMessage.value = it.localizedMessage
+                            isLoading.value = false
+                        }
+                }
+
+                invitedEmails.forEach { email ->
+                    db.collection("users")
+                        .whereEqualTo("email", email)
+                        .limit(1)
+                        .get()
+                        .addOnSuccessListener { snap ->
+                            processed++
+                            val doc = snap.documents.firstOrNull()
+                            val uid = doc?.getString("uid")
+
+                            if (uid != null) emailToUid[email] = uid
+                            else invalid.add(email)
+
+                            if (processed == total) finishValidation()
+                        }
+                        .addOnFailureListener {
+                            processed++
+                            invalid.add(email)
+                            if (processed == total) finishValidation()
+                        }
+                }
             }
-        }.addOnFailureListener { e ->
-            isLoading.value = false
-            errorMessage.value = e.localizedMessage
-        }
+            .addOnFailureListener {
+                isLoading.value = false
+                errorMessage.value = it.localizedMessage
+            }
     }
 
     fun loadUserPreferredCurrency() {
-        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
-
-        FirebaseFirestore.getInstance()
-            .collection("users")
-            .document(uid)
-            .get()
+        val uid = auth.currentUser?.uid ?: return
+        db.collection("users").document(uid).get()
             .addOnSuccessListener { snap ->
-                val user = snap.toObject(User::class.java)
-                preferredCurrency.value = user?.preferredCurrency ?: "EUR"
+                preferredCurrency.value =
+                    snap.toObject(User::class.java)?.preferredCurrency ?: "EUR"
             }
     }
-
 }

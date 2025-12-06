@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import hu.ait.maral.fairshare.data.Group
@@ -41,8 +42,8 @@ fun NotificationsScreen(
                 title = {
                     Text(
                         text = "Notifications",
-                        fontFamily = FontFamily.Cursive,
-                        color = LogoGreen
+                        color = LogoGreen,
+                        fontWeight = FontWeight.ExtraBold
                     )
                 },
                 navigationIcon = {

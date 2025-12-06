@@ -1,6 +1,5 @@
 package hu.ait.maral.fairshare.ui.screen
 
-
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -11,7 +10,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import hu.ait.maral.fairshare.ui.theme.BackgroundPink
@@ -101,7 +99,13 @@ fun RoomScreen(
 
                         LazyColumn {
                             itemsIndexed(groupState.members) { index, memberName ->
-                                val balance = groupState.balances.getOrNull(index) ?: 0.0
+
+                                // ✅ FIXED: balance lookup by userId
+                                val memberId = groupState.memberIds.getOrNull(index)
+                                val balance = memberId?.let { id ->
+                                    groupState.balances[id]
+                                } ?: 0.0
+
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()

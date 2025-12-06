@@ -27,12 +27,12 @@ import hu.ait.maral.fairshare.ui.theme.ButtonGreen
 import hu.ait.maral.fairshare.ui.theme.LogoGreen
 import kotlin.math.min
 
+// UI model used just for display
 data class GroupUi(
     val groupId: String,
     val name: String,
-    val members: List<String>,
-    // interpreted as *already converted* balances for display
-    val balances: List<Double>
+    val memberNames: List<String>,      // confirmed member names (no pending)
+    val memberBalances: List<Double>    // already converted to user's currency
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -109,52 +109,74 @@ fun HomeScreen(
                 .padding(16.dp)
         ) {
 
-            if (isLoading) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator(color = ButtonGreen)
+            when {
+                isLoading -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = ButtonGreen)
+                    }
                 }
-            } else if (errorMessage != null) {
-                Text(
-                    text = "Error: $errorMessage",
-                    color = Color.Red,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(8.dp)
-                )
-            } else if (groups.isEmpty()) {
-                Text(
-                    "You are not in any groups yet.",
-                    color = ButtonGreen,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Medium
-                )
-            } else {
-                LazyColumn {
-                    items(groups) { group ->
 
-                        // Convert each balance from EUR -> userCurrency for display
-                        val convertedBalances: List<Double> =
-                            group.balances.map { eurValue ->
-                                convertAmount(
-                                    amountEur = eurValue,
+                errorMessage != null -> {
+                    Text(
+                        text = "Error: $errorMessage",
+                        color = Color.Red,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(8.dp)
+                    )
+                }
+
+                groups.isEmpty() -> {
+                    Text(
+                        "You are not in any groups yet.",
+                        color = ButtonGreen,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+
+                else -> {
+                    LazyColumn {
+                        items(groups) { group ->
+
+                            // Build aligned names + balances using the new Map<memberId, Double>
+                            // Only confirmed members (memberIds) are considered here; pending members
+                            // are kept separate in the Group data and not displayed.
+                            val memberNames = mutableListOf<String>()
+                            val memberBalances = mutableListOf<Double>()
+
+                            val memberIds = group.memberIds   // confirmed member IDs
+                            val namesList = group.members      // parallel list of names
+                            val balanceMap = group.balances    // Map<memberId, Double> in EUR
+
+                            for (i in memberIds.indices) {
+                                val memberId = memberIds[i]
+                                val name = namesList.getOrNull(i) ?: "Member"
+                                val balanceEur = balanceMap[memberId] ?: 0.0
+                                val balanceConverted = convertAmount(
+                                    amountEur = balanceEur,
                                     userCurrency = userCurrency,
                                     fxRates = fxRates
                                 )
+
+                                memberNames.add(name)
+                                memberBalances.add(balanceConverted)
                             }
 
-                        GroupCard(
-                            modifier = Modifier.fillMaxWidth(),
-                            onClick = { onRoomClick(group.groupId) },
-                            group = GroupUi(
-                                groupId = group.groupId,
-                                name = group.name,
-                                members = group.members,
-                                balances = convertedBalances
-                            ),
-                            currencyCode = userCurrency
-                        )
+                            GroupCard(
+                                modifier = Modifier.fillMaxWidth(),
+                                onClick = { onRoomClick(group.groupId) },
+                                group = GroupUi(
+                                    groupId = group.groupId,
+                                    name = group.name,
+                                    memberNames = memberNames,
+                                    memberBalances = memberBalances
+                                ),
+                                currencyCode = userCurrency
+                            )
+                        }
                     }
                 }
             }
@@ -260,7 +282,7 @@ fun GroupCard(
     group: GroupUi,
     currencyCode: String
 ) {
-    val memberCount = min(group.members.size, group.balances.size)
+    val memberCount = min(group.memberNames.size, group.memberBalances.size)
 
     Card(
         onClick = onClick,
@@ -288,7 +310,7 @@ fun GroupCard(
             ) {
                 for (i in 0 until memberCount) {
                     Text(
-                        text = group.members[i],
+                        text = group.memberNames[i],
                         modifier = Modifier.weight(1f),
                         fontWeight = FontWeight.Medium
                     )
@@ -304,7 +326,7 @@ fun GroupCard(
             ) {
                 for (i in 0 until memberCount) {
                     Text(
-                        text = "${currencyCode} ${formatAmount(group.balances[i])}",
+                        text = "${currencyCode} ${formatAmount(group.memberBalances[i])}",
                         modifier = Modifier.weight(1f),
                         fontWeight = FontWeight.SemiBold,
                         color = Color(0xFFAA4A44)
