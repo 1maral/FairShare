@@ -42,7 +42,7 @@ sealed interface BillUploadUiState {
 
 class BillViewModel : ViewModel() {
     companion object {
-        const val COLLECTION_BILLS = "Bills"
+        const val COLLECTION_BILLS = "bills"
     }
 
     var billUploadUiState: BillUploadUiState
@@ -57,8 +57,9 @@ class BillViewModel : ViewModel() {
         title: String,
         billItems: List<Item>,
         itemAssignments: Map<String, String> = mapOf(),
-        splitMethod: SplitMethod = SplitMethod.EQUAL,
-        imgUrl: String = ""
+        splitMethod: SplitMethod,
+        imgUrl: String = "",
+        onSuccess: () -> Unit
     ) {
         billUploadUiState = BillUploadUiState.LoadingBillUpload
 
@@ -93,9 +94,10 @@ class BillViewModel : ViewModel() {
         imageUri: Uri,
         title: String,
         billItems: List<Item>,
-        itemAssignments: Map<String, String> = mapOf(),
-        splitMethod: SplitMethod = SplitMethod.EQUAL,
-        supabase: SupabaseClient = SupabaseProvider.supabase
+        itemAssignments: Map<String, String> = emptyMap(),
+        splitMethod: SplitMethod,
+        supabase: SupabaseClient = SupabaseProvider.supabase,
+        onSuccess: () -> Unit
     ) {
         viewModelScope.launch {
             try {
@@ -123,13 +125,104 @@ class BillViewModel : ViewModel() {
                     billItems = billItems,
                     itemAssignments = itemAssignments,
                     splitMethod = splitMethod,
-                    imgUrl = imgUrl
+                    imgUrl = imgUrl,
+                    onSuccess = onSuccess
                 )
             } catch (e: Exception) {
                 billUploadUiState = BillUploadUiState.ErrorDuringImageUpload(e.message)
             }
         }
     }
+    fun loadMembersForGroup(
+        groupId: String,
+        onResult: (List<Pair<String, String>>) -> Unit
+    ) {
+        val db = FirebaseFirestore.getInstance()
+
+        db.collection("groups").document(groupId).get()
+            .addOnSuccessListener { groupDoc ->
+                val memberIds = groupDoc.get("memberIds") as? List<String> ?: emptyList()
+                if (memberIds.isEmpty()) {
+                    onResult(emptyList())
+                    return@addOnSuccessListener
+                }
+
+                val usersCollection = db.collection("users")
+                val resultList = mutableListOf<Pair<String, String>>()
+
+                // Fetch display name for each member UID
+                memberIds.forEach { uid ->
+                    usersCollection.document(uid).get()
+                        .addOnSuccessListener { userDoc ->
+                            val name = userDoc.getString("name") ?: "Unknown"
+                            resultList.add(uid to name)
+
+                            // When all users are loaded, return
+                            if (resultList.size == memberIds.size) {
+                                onResult(resultList)
+                            }
+                        }
+                        .addOnFailureListener {
+                            resultList.add(uid to "Unknown")
+                            if (resultList.size == memberIds.size) {
+                                onResult(resultList)
+                            }
+                        }
+                }
+            }
+            .addOnFailureListener {
+                onResult(emptyList())
+            }
+    }
+
+    fun updateBalance(
+        groupId: String,
+        billItems: List<Item>,
+        itemAssignments: Map<String, String>,
+        splitMethod: SplitMethod
+    ) {
+        val db = FirebaseFirestore.getInstance()
+        val groupRef = db.collection("groups").document(groupId)
+
+        db.runTransaction { tx ->
+            val groupSnap = tx.get(groupRef)
+
+            val members = groupSnap.get("memberIds") as? List<String> ?: emptyList()
+            val existingBalances = groupSnap.get("balances") as? Map<String, Double> ?: mapOf()
+
+            // Start with the existing balances
+            val newBalances = existingBalances.toMutableMap()
+            members.forEach { uid ->
+                if (!newBalances.containsKey(uid)) {
+                    newBalances[uid] = 0.0
+                }
+            }
+
+            when (splitMethod) {
+                // Everyone pays equal portion of total bill
+                SplitMethod.EQUAL -> {
+                    val total = billItems.sumOf { it.itemPrice }
+                    val perPerson = total / members.size
+                    members.forEach { uid ->
+                        newBalances[uid] = (newBalances[uid] ?: 0.0) + perPerson
+                    }
+                }
+
+                // Each item belongs to one user → add entire item price to that user
+                SplitMethod.BY_ITEM -> {
+                    billItems.forEach { item ->
+                        val assignedUid = itemAssignments[item.itemId] ?: return@forEach
+                        newBalances[assignedUid] =
+                            (newBalances[assignedUid] ?: 0.0) + item.itemPrice
+                    }
+                }
+            }
+
+            // Write back updated balances
+            tx.update(groupRef, "balances", newBalances)
+        }
+    }
+
 }
 
 
