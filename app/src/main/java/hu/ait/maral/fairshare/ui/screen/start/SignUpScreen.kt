@@ -26,7 +26,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
-import hu.ait.maral.fairshare.data.User
 import hu.ait.maral.fairshare.ui.theme.BackgroundPink
 import hu.ait.maral.fairshare.ui.theme.ButtonGreen
 import hu.ait.maral.fairshare.ui.theme.LogoGreen
@@ -50,11 +49,19 @@ fun SignUpScreen(
     var confirmPassword by rememberSaveable { mutableStateOf("") }
     var showPassword by rememberSaveable { mutableStateOf(false) }
     var showPasswordConfirm by rememberSaveable { mutableStateOf(false) }
-    var preferredCurrency by rememberSaveable { mutableStateOf("USD") }
 
-    // Payment methods map
+
+    val currencyOptions = listOf("USD", "EUR", "GBP", "HUF", "JPY",
+        "CAD", "AUD", "CHF", "INR", "CNY",
+        "SEK", "NOK", "NZD", "MXN", "BRL")
+    var isCurrencyExpanded by rememberSaveable { mutableStateOf(false) }
+    var selectedCurrency by rememberSaveable { mutableStateOf(currencyOptions.first()) }
+
     val paymentMethods = remember { mutableStateMapOf<String, String>() }
-    var newPaymentName by rememberSaveable { mutableStateOf("") }
+
+    val paymentTypeOptions = listOf("Zelle", "Venmo", "PayPal", "Cash App", "Bank Transfer")
+    var isPaymentTypeExpanded by rememberSaveable { mutableStateOf(false) }
+    var selectedPaymentType by rememberSaveable { mutableStateOf(paymentTypeOptions.first()) }
     var newPaymentValue by rememberSaveable { mutableStateOf("") }
 
     // avatar picking
@@ -212,7 +219,11 @@ fun SignUpScreen(
                         visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
                         trailingIcon = {
                             IconButton(onClick = { showPassword = !showPassword }) {
-                                Icon(imageVector = if (showPassword) Icons.Default.Clear else Icons.Default.Add, contentDescription = null)
+                                Icon(
+                                    imageVector = if (showPassword) Icons.Default.VisibilityOff
+                                    else Icons.Default.Visibility,
+                                    contentDescription = null
+                                )
                             }
                         },
                         modifier = Modifier.fillMaxWidth()
@@ -229,52 +240,136 @@ fun SignUpScreen(
                         visualTransformation = if (showPasswordConfirm) VisualTransformation.None else PasswordVisualTransformation(),
                         trailingIcon = {
                             IconButton(onClick = { showPasswordConfirm = !showPasswordConfirm }) {
-                                Icon(imageVector = if (showPasswordConfirm) Icons.Default.Clear else Icons.Default.Add, contentDescription = null)
+                                Icon(
+                                    imageVector = if (showPasswordConfirm) Icons.Default.VisibilityOff
+                                    else Icons.Default.Visibility,
+                                    contentDescription = null
+                                )
                             }
                         },
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
 
-                // Preferred currency
                 item {
-                    OutlinedTextField(
-                        value = preferredCurrency,
-                        onValueChange = { preferredCurrency = it.uppercase() },
-                        label = { Text("Preferred Currency (USD/EUR...)") },
-                        singleLine = true,
+                    ExposedDropdownMenuBox(
+                        expanded = isCurrencyExpanded,
+                        onExpandedChange = { isCurrencyExpanded = !isCurrencyExpanded },
                         modifier = Modifier.fillMaxWidth()
-                    )
+                    ) {
+                        OutlinedTextField(
+                            value = selectedCurrency,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Preferred Currency") },
+                            modifier = Modifier
+                                .menuAnchor()
+                                .fillMaxWidth(),
+                            trailingIcon = {
+                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = isCurrencyExpanded)
+                            },colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = BackgroundPink,
+                                unfocusedContainerColor = BackgroundPink,
+                                disabledContainerColor = BackgroundPink
+                            )
+                        )
+
+                        ExposedDropdownMenu(
+                            expanded = isCurrencyExpanded,
+                            onDismissRequest = { isCurrencyExpanded = false },
+                            modifier = Modifier.heightIn(max = 200.dp)) {
+                            currencyOptions.forEach { option ->
+                                DropdownMenuItem(
+                                    text = { Text(option) },
+                                    onClick = {
+                                        selectedCurrency = option
+                                        isCurrencyExpanded = false
+                                    }, colors = MenuDefaults.itemColors(
+                                        textColor = LogoGreen,
+                                        leadingIconColor = LogoGreen,
+                                        trailingIconColor = LogoGreen,
+                                        disabledTextColor = LogoGreen.copy(alpha = 0.4f)
+                                    )
+                                )
+                            }
+                        }
+                    }
                 }
 
-                // Payment methods header + add row
                 item {
-                    Text("Payment methods (add type + id)", color = LogoGreen)
+                    Text("Payment methods", color = LogoGreen)
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedTextField(
-                            value = newPaymentName,
-                            onValueChange = { newPaymentName = it },
-                            placeholder = { Text("ex: Zelle") },
-                            singleLine = true,
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Payment type dropdown
+                        ExposedDropdownMenuBox(
+                            expanded = isPaymentTypeExpanded,
+                            onExpandedChange = { isPaymentTypeExpanded = !isPaymentTypeExpanded },
                             modifier = Modifier.weight(1f)
-                        )
+                        ) {
+                            OutlinedTextField(
+                                value = selectedPaymentType,
+                                onValueChange = {},
+                                readOnly = true,
+                                label = { Text("Type") },
+                                modifier = Modifier
+                                    .menuAnchor()
+                                    .fillMaxWidth(),
+                                trailingIcon = {
+                                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = isPaymentTypeExpanded)
+                                }, colors = OutlinedTextFieldDefaults.colors(
+                                    focusedContainerColor = BackgroundPink,
+                                    unfocusedContainerColor = BackgroundPink,
+                                    disabledContainerColor = BackgroundPink
+                                )
+
+                            )
+
+                            ExposedDropdownMenu(
+                                expanded = isPaymentTypeExpanded,
+                                onDismissRequest = { isPaymentTypeExpanded = false },
+                                modifier = Modifier.heightIn(max = 200.dp)
+                            ) {
+                                paymentTypeOptions.forEach { option ->
+                                    DropdownMenuItem(
+                                        text = { Text(option) },
+                                        onClick = {
+                                            selectedPaymentType = option
+                                            isPaymentTypeExpanded = false
+                                        },  colors = MenuDefaults.itemColors(
+                                            textColor = LogoGreen,
+                                            leadingIconColor = LogoGreen,
+                                            trailingIconColor = LogoGreen,
+                                            disabledTextColor = LogoGreen.copy(alpha = 0.4f)
+                                        )
+                                    )
+                                }
+                            }
+                        }
+
+                        // Handle / ID
                         OutlinedTextField(
                             value = newPaymentValue,
                             onValueChange = { newPaymentValue = it },
-                            placeholder = { Text("ex: Zelle123") },
+                            placeholder = { Text("ex: @venmoUser") },
                             singleLine = true,
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1.5f)
                         )
+
                         OutlinedButton(onClick = {
-                            // add if both fields present
-                            if (newPaymentName.isNotBlank() && newPaymentValue.isNotBlank()) {
-                                paymentMethods[newPaymentName] = newPaymentValue
-                                newPaymentName = ""
+                            if (newPaymentValue.isNotBlank()) {
+                                paymentMethods[selectedPaymentType] = newPaymentValue
                                 newPaymentValue = ""
                             } else {
-                                scope.launch { snackbarHostState.showSnackbar("Fill both fields to add a payment method") }
+                                scope.launch {
+                                    snackbarHostState.showSnackbar(
+                                        "Enter a handle/id to add a payment method"
+                                    )
+                                }
                             }
                         }) {
                             Icon(Icons.Default.Add, contentDescription = "add")
@@ -289,13 +384,21 @@ fun SignUpScreen(
                 items(paymentMethods.entries.toList()) { entry ->
                     val key = entry.key
                     val value = entry.value
-                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(key, color = LogoGreen)
                             Text(value)
                         }
                         IconButton(onClick = { paymentMethods.remove(key) }) {
-                            Icon(imageVector = Icons.Default.Delete, contentDescription = "delete", tint = MaterialTheme.colorScheme.error)
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "delete",
+                                tint = MaterialTheme.colorScheme.error
+                            )
                         }
                     }
                 }
@@ -303,37 +406,57 @@ fun SignUpScreen(
                 // action buttons
                 item {
                     Spacer(modifier = Modifier.height(12.dp))
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        OutlinedButton(onClick = onNavigateBack, colors = ButtonDefaults.outlinedButtonColors(containerColor = ButtonGreen)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        OutlinedButton(
+                            onClick = onNavigateBack,
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = ButtonGreen
+                            )
+                        ) {
                             Text("Back", color = MaterialTheme.colorScheme.onPrimary)
                         }
                         OutlinedButton(
                             onClick = {
                                 when {
                                     name.isBlank() -> {
-                                        scope.launch { snackbarHostState.showSnackbar("Name is required") }
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar("Name is required")
+                                        }
                                         return@OutlinedButton
                                     }
                                     phone.isBlank() -> {
-                                        scope.launch { snackbarHostState.showSnackbar("Phone number is required") }
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar("Phone number is required")
+                                        }
                                         return@OutlinedButton
                                     }
                                     email.isBlank() -> {
-                                        scope.launch { snackbarHostState.showSnackbar("Email is required") }
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar("Email is required")
+                                        }
                                         return@OutlinedButton
                                     }
                                     password.isBlank() -> {
-                                        scope.launch { snackbarHostState.showSnackbar("Password is required") }
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar("Password is required")
+                                        }
                                         return@OutlinedButton
                                     }
-                                    preferredCurrency.isBlank() -> {
-                                        scope.launch { snackbarHostState.showSnackbar("Currency is required") }
+                                    selectedCurrency.isBlank() -> {
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar("Currency is required")
+                                        }
                                         return@OutlinedButton
                                     }
                                 }
 
                                 if (password != confirmPassword) {
-                                    scope.launch { snackbarHostState.showSnackbar("Passwords do not match") }
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar("Passwords do not match")
+                                    }
                                     return@OutlinedButton
                                 }
 
@@ -345,10 +468,12 @@ fun SignUpScreen(
                                     password = password,
                                     phone = phone,
                                     paymentMethods = paymentMethods.toMap(),
-                                    preferredCurrency = preferredCurrency
+                                    preferredCurrency = selectedCurrency
                                 )
                             },
-                            colors = ButtonDefaults.outlinedButtonColors(containerColor = ButtonGreen)
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = ButtonGreen
+                            )
                         ) {
                             Text("Sign Up", color = MaterialTheme.colorScheme.onPrimary)
                         }
@@ -361,7 +486,9 @@ fun SignUpScreen(
                 is SignUpUiState.Error -> {
                     LaunchedEffect(state) {
                         scope.launch {
-                            snackbarHostState.showSnackbar(state.errorMessage ?: "Unknown error")
+                            snackbarHostState.showSnackbar(
+                                state.errorMessage ?: "Unknown error"
+                            )
                         }
                     }
                 }
@@ -377,7 +504,9 @@ fun SignUpScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f)),
+                            .background(
+                                MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f)
+                            ),
                         contentAlignment = Alignment.Center
                     ) {
                         CircularProgressIndicator(color = LogoGreen)
