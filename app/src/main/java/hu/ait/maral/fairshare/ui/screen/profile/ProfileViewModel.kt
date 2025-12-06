@@ -10,7 +10,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import hu.ait.maral.fairshare.data.SupabaseClientProvider
+import hu.ait.maral.fairshare.data.SupabaseProvider
 import hu.ait.maral.fairshare.data.User
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.storage.storage
@@ -19,7 +19,7 @@ import java.io.ByteArrayOutputStream
 import java.util.UUID
 
 class ProfileViewModel(
-    private val supabase: SupabaseClient = SupabaseClientProvider.supabase
+    private val supabase: SupabaseClient = SupabaseProvider.supabase
 ) : ViewModel() {
 
     private val auth = FirebaseAuth.getInstance()

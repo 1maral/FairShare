@@ -1,6 +1,7 @@
 package hu.ait.maral.fairshare.ui.screen.start
 
 import android.content.ContentResolver
+import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.net.Uri
 import android.os.Build
@@ -19,7 +20,7 @@ import io.github.jan.supabase.SupabaseClient
 import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
 import java.util.UUID
-import hu.ait.maral.fairshare.data.SupabaseClientProvider
+import hu.ait.maral.fairshare.data.SupabaseProvider
 import io.github.jan.supabase.storage.storage
 
 sealed interface SignUpUiState {
@@ -30,7 +31,7 @@ sealed interface SignUpUiState {
 }
 
 class SignUpViewModel(
-    private val supabase: SupabaseClient = SupabaseClientProvider.supabase
+    val supabase: SupabaseClient = SupabaseProvider.supabase
 ) : ViewModel() {
 
     var signUpUiState: SignUpUiState by mutableStateOf(SignUpUiState.Init)
@@ -67,7 +68,7 @@ class SignUpViewModel(
                         val source = ImageDecoder.createSource(contentResolver, uri)
                         val bitmap = ImageDecoder.decodeBitmap(source)
                         val baos = ByteArrayOutputStream()
-                        bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 100, baos)
+                        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos)
                         baos.toByteArray()
                     }
 
@@ -95,15 +96,25 @@ class SignUpViewModel(
      */
     private suspend fun uploadProfileImage(uid: String, bytes: ByteArray): String? {
         return try {
-            val fileName = "profile/$uid-${UUID.randomUUID()}.jpg"
+
+            // Safe filename without folders
+            val fileName = "$uid-${UUID.randomUUID()}.jpg"
+
             val bucket = supabase.storage.from("profile_pictures")
-            bucket.upload(fileName, bytes)
+            bucket.upload(
+                path = fileName,
+                data = bytes
+            )
+
+            // Get public URL
             bucket.publicUrl(fileName)
+
         } catch (e: Exception) {
             signUpUiState = SignUpUiState.Error("Image upload failed: ${e.message}")
             null
         }
     }
+
 
     /**
      * Saves user to Firestore
