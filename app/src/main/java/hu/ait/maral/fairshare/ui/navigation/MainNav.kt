@@ -24,3 +24,7 @@ data class RoomScreenKey(val groupId: String): NavKey
 
 @Serializable
 data object ProfileScreenKey: NavKey
+
+@Serializable
+data object TestScreenKey: NavKey
+
