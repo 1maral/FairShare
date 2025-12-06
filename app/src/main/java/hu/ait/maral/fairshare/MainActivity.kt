@@ -1,10 +1,12 @@
 package hu.ait.maral.fairshare
 
 import android.R.attr.onClick
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -48,6 +50,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+@RequiresApi(Build.VERSION_CODES.P)
 @Composable
 fun NavGraph(modifier: Modifier) {
     val backStack = rememberNavBackStack(SplashScreenKey)
