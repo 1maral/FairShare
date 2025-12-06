@@ -98,10 +98,9 @@ class SignUpViewModel(
     private suspend fun uploadProfileImage(uid: String, bytes: ByteArray): String? {
         return try {
             val fileName = "profile/$uid-${UUID.randomUUID()}.jpg"
-
-            supabase.storage.from("profile_pictures").upload(fileName, bytes)
-
-            supabase.storage.from("profile_pictures").publicUrl(fileName)
+            val bucket = supabase.storage.from("profile_pictures")
+            bucket.upload(fileName, bytes)
+            bucket.publicUrl(fileName)
         } catch (e: Exception) {
             signUpUiState = SignUpUiState.Error("Image upload failed: ${e.message}")
             null
@@ -126,10 +125,10 @@ class SignUpViewModel(
             email = email,
             phoneNumber = phone,
             paymentMethods = paymentMethods,
+            preferredCurrency = preferredCurrency,
             profilePictureUrl = profileImageUrl,
             createdAt = System.currentTimeMillis(),
             lastLogin = System.currentTimeMillis()
-            // you can add preferredCurrency to User class if needed
         )
 
         db.collection("users")
