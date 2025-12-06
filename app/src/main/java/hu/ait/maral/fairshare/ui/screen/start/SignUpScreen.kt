@@ -256,14 +256,14 @@ fun SignUpScreen(
                         OutlinedTextField(
                             value = newPaymentName,
                             onValueChange = { newPaymentName = it },
-                            placeholder = { Text("Zelle / Venmo / PayPal") },
+                            placeholder = { Text("ex: Zelle") },
                             singleLine = true,
                             modifier = Modifier.weight(1f)
                         )
                         OutlinedTextField(
                             value = newPaymentValue,
                             onValueChange = { newPaymentValue = it },
-                            placeholder = { Text("username / email / id") },
+                            placeholder = { Text("ex: Zelle123") },
                             singleLine = true,
                             modifier = Modifier.weight(1f)
                         )
@@ -307,28 +307,49 @@ fun SignUpScreen(
                         OutlinedButton(onClick = onNavigateBack, colors = ButtonDefaults.outlinedButtonColors(containerColor = ButtonGreen)) {
                             Text("Back", color = MaterialTheme.colorScheme.onPrimary)
                         }
-
                         OutlinedButton(
                             onClick = {
-                                if (password != confirmPassword) {
-                                    scope.launch {
-                                        snackbarHostState.showSnackbar("Passwords do not match")
+                                when {
+                                    name.isBlank() -> {
+                                        scope.launch { snackbarHostState.showSnackbar("Name is required") }
+                                        return@OutlinedButton
                                     }
+                                    phone.isBlank() -> {
+                                        scope.launch { snackbarHostState.showSnackbar("Phone number is required") }
+                                        return@OutlinedButton
+                                    }
+                                    email.isBlank() -> {
+                                        scope.launch { snackbarHostState.showSnackbar("Email is required") }
+                                        return@OutlinedButton
+                                    }
+                                    password.isBlank() -> {
+                                        scope.launch { snackbarHostState.showSnackbar("Password is required") }
+                                        return@OutlinedButton
+                                    }
+                                    preferredCurrency.isBlank() -> {
+                                        scope.launch { snackbarHostState.showSnackbar("Currency is required") }
+                                        return@OutlinedButton
+                                    }
+                                }
+
+                                if (password != confirmPassword) {
+                                    scope.launch { snackbarHostState.showSnackbar("Passwords do not match") }
                                     return@OutlinedButton
                                 }
 
-                                // Call updated ViewModel directly
                                 viewModel.registerUser(
                                     contentResolver = context.contentResolver,
                                     avatarUri = avatarUri,
                                     name = name,
                                     email = email,
                                     password = password,
-                                    phone = phone.ifBlank { null },
+                                    phone = phone,
                                     paymentMethods = paymentMethods.toMap(),
                                     preferredCurrency = preferredCurrency
                                 )
-                    }, colors = ButtonDefaults.outlinedButtonColors(containerColor = ButtonGreen)) {
+                            },
+                            colors = ButtonDefaults.outlinedButtonColors(containerColor = ButtonGreen)
+                        ) {
                             Text("Sign Up", color = MaterialTheme.colorScheme.onPrimary)
                         }
                     }
@@ -338,19 +359,27 @@ fun SignUpScreen(
             // UI state -> snackbars / loading
             when (state) {
                 is SignUpUiState.Error -> {
-                    LaunchedEffect(state) { scope.launch { snackbarHostState.showSnackbar(state.errorMessage ?: "Unknown error") } }
+                    LaunchedEffect(state) {
+                        scope.launch {
+                            snackbarHostState.showSnackbar(state.errorMessage ?: "Unknown error")
+                        }
+                    }
                 }
                 is SignUpUiState.RegisterSuccess -> {
                     LaunchedEffect(Unit) {
-                        scope.launch { snackbarHostState.showSnackbar("Registered successfully!") }
+                        scope.launch {
+                            snackbarHostState.showSnackbar("Registered successfully!")
+                        }
                         onRegisterSuccess()
                     }
                 }
                 is SignUpUiState.Loading -> {
-                    Box(modifier = Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f)),
-                        contentAlignment = Alignment.Center) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f)),
+                        contentAlignment = Alignment.Center
+                    ) {
                         CircularProgressIndicator(color = LogoGreen)
                     }
                 }

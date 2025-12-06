@@ -48,7 +48,7 @@ class SignUpViewModel(
         name: String,
         email: String,
         password: String,
-        phone: String?,
+        phone: String,
         paymentMethods: Map<String, String>,
         preferredCurrency: String
     ) {
@@ -63,7 +63,6 @@ class SignUpViewModel(
                 }
 
                 viewModelScope.launch {
-                    // Convert avatar Uri to bytes
                     val imageBytes: ByteArray? = avatarUri?.let { uri ->
                         val source = ImageDecoder.createSource(contentResolver, uri)
                         val bitmap = ImageDecoder.decodeBitmap(source)
@@ -72,10 +71,8 @@ class SignUpViewModel(
                         baos.toByteArray()
                     }
 
-                    // Upload avatar to Supabase if available
                     val imageUrl = imageBytes?.let { uploadProfileImage(firebaseUser.uid, it) }
 
-                    // Save user to Firestore
                     saveUserToFirestore(
                         uid = firebaseUser.uid,
                         name = name,
@@ -91,6 +88,7 @@ class SignUpViewModel(
                 signUpUiState = SignUpUiState.Error(it.localizedMessage)
             }
     }
+
 
     /**
      * Uploads profile image to Supabase
@@ -114,7 +112,7 @@ class SignUpViewModel(
         uid: String,
         name: String,
         email: String,
-        phone: String?,
+        phone: String,
         paymentMethods: Map<String, String>,
         profileImageUrl: String?,
         preferredCurrency: String

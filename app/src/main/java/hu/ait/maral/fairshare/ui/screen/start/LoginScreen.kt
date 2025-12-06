@@ -14,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
@@ -59,7 +60,7 @@ fun LoginScreen(
                 .align(Alignment.TopCenter)
                 .padding(top = 50.dp),
             fontSize = 34.sp,
-            fontFamily = FontFamily.Cursive,
+            fontWeight = FontWeight.ExtraBold,
             // Custom green color for better UI :)
             color = LogoGreen
         )
