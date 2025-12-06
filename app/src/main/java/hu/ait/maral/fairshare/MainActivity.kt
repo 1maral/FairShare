@@ -18,21 +18,25 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
 import androidx.navigation3.scene.rememberSceneSetupNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
+import com.google.firebase.auth.FirebaseAuth
 import hu.ait.maral.fairshare.ui.navigation.HomeScreenKey
 import hu.ait.maral.fairshare.ui.navigation.LoginScreenKey
 import hu.ait.maral.fairshare.ui.navigation.NotificationScreenKey
+import hu.ait.maral.fairshare.ui.navigation.ProfileScreenKey
 import hu.ait.maral.fairshare.ui.navigation.RoomScreenKey
 import hu.ait.maral.fairshare.ui.navigation.SignUpScreenKey
 import hu.ait.maral.fairshare.ui.navigation.SplashScreenKey
 import hu.ait.maral.fairshare.ui.screen.RoomScreen
 import hu.ait.maral.fairshare.ui.screen.home.HomeScreen
 import hu.ait.maral.fairshare.ui.screen.notifications.NotificationsScreen
+import hu.ait.maral.fairshare.ui.screen.profile.ProfileScreen
 import hu.ait.maral.fairshare.ui.screen.start.LoginScreen
 import hu.ait.maral.fairshare.ui.screen.start.SignUpScreen
 import hu.ait.maral.fairshare.ui.screen.start.SplashScreen
 import hu.ait.maral.fairshare.ui.theme.FairShareTheme
 
 class MainActivity : ComponentActivity() {
+    @RequiresApi(Build.VERSION_CODES.P)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -91,14 +95,17 @@ fun NavGraph(modifier: Modifier) {
                     onNavigateBack = { backStack.removeLastOrNull() }
                 )
             }
+
             // HOME SCREEN
             entry<HomeScreenKey> {
+                val currentUser = FirebaseAuth.getInstance().currentUser
+                val userId = currentUser?.uid ?: ""
+
                 HomeScreen(onNotificationsClick = {
                     backStack.add(NotificationScreenKey)
-
                 }, onRoomClick = { groupId ->
                     backStack.add(RoomScreenKey(groupId))
-                })
+                }, onProfileClick = {backStack.add(ProfileScreenKey(userId))})
             }
 
             entry<NotificationScreenKey>{
@@ -108,6 +115,8 @@ fun NavGraph(modifier: Modifier) {
             entry<RoomScreenKey> { key ->
                 RoomScreen(groupId = key.groupId)
             }
+
+            entry<ProfileScreenKey> { key -> ProfileScreen( userId = key.userId)}
         }
     )
 }
