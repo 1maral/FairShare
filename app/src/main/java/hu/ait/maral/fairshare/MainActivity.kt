@@ -67,7 +67,6 @@ fun NavGraph(modifier: Modifier) {
             rememberViewModelStoreNavEntryDecorator()
         ),
         entryProvider = entryProvider {
-            // SPLASH SCREEN
             entry<SplashScreenKey> {
                 SplashScreen(
                     onTimeout = {
@@ -76,7 +75,6 @@ fun NavGraph(modifier: Modifier) {
                     }
                 )
             }
-            // LOGIN SCREEN
             entry<LoginScreenKey> {
                 LoginScreen(
                     onLoginSuccess = {
@@ -88,7 +86,6 @@ fun NavGraph(modifier: Modifier) {
                 )
             }
 
-            // SIGNUP SCREEN
             entry<SignUpScreenKey> { route ->
                 SignUpScreen(
                     defaultEmail = route.email,
@@ -98,7 +95,6 @@ fun NavGraph(modifier: Modifier) {
                 )
             }
 
-            // HOME SCREEN
             entry<HomeScreenKey> {
 
                 HomeScreen(onNotificationsClick = {
@@ -116,11 +112,11 @@ fun NavGraph(modifier: Modifier) {
                 RoomScreen(groupId = key.groupId,
                     onAddBillClick = { backStack.add(BillScreenKey(key.groupId)) })
             }
-            //PROFILE SCREEN
-            entry<ProfileScreenKey> { key -> ProfileScreen()}
+
+            entry<ProfileScreenKey> { key -> ProfileScreen(onSaveClick = {backStack.add(
+                HomeScreenKey)})}
 
 
-            // BILL UPLOAD SCREEN
             entry<BillScreenKey> { key ->
                 BillScreen(key.groupId)
             }

@@ -34,7 +34,7 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
-    viewModel: ProfileViewModel = viewModel()
+    viewModel: ProfileViewModel = viewModel(),  onSaveClick: () -> Unit
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -339,6 +339,9 @@ fun ProfileScreen(
                                         snackbarHostState.showSnackbar(
                                             message ?: if (success) "Saved" else "Error saving profile"
                                         )
+                                    }
+                                    if (success) {
+                                        onSaveClick()
                                     }
                                 }
                             },

@@ -183,7 +183,11 @@ fun BillScreen(
 
         Box {
             OutlinedButton(onClick = { splitExpanded = true }) {
-                Text("Split method: ${splitMethod.name.lowercase().replaceFirstChar { it.uppercase() }}")
+                Text(
+                    "Split method: ${
+                        splitMethod.name.lowercase().replaceFirstChar { it.uppercase() }
+                    }"
+                )
             }
             DropdownMenu(
                 expanded = splitExpanded,
@@ -212,6 +216,7 @@ fun BillScreen(
         Button(onClick = {
             if (imageUri == null) {
                 viewModel.uploadBill(
+                    groupId = groupId,
                     title = billTitle,
                     billItems = billItems,
                     itemAssignments = itemAssignments,
@@ -227,6 +232,7 @@ fun BillScreen(
                 }
             } else {
                 viewModel.uploadBillImage(
+                    groupId = groupId,
                     contentResolver = context.contentResolver,
                     imageUri = imageUri!!,
                     title = billTitle,

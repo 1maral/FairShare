@@ -41,12 +41,12 @@ sealed interface BillUploadUiState {
 }
 
 class BillViewModel : ViewModel() {
+
     companion object {
         const val COLLECTION_BILLS = "bills"
     }
 
-    var billUploadUiState: BillUploadUiState
-            by mutableStateOf(BillUploadUiState.Init)
+    var billUploadUiState: BillUploadUiState by mutableStateOf(BillUploadUiState.Init)
 
     private val auth: FirebaseAuth = Firebase.auth
 
@@ -54,9 +54,10 @@ class BillViewModel : ViewModel() {
      * Uploads a bill without an image
      */
     fun uploadBill(
+        groupId: String,
         title: String,
         billItems: List<Item>,
-        itemAssignments: Map<String, String> = mapOf(),
+        itemAssignments: Map<String, String> = emptyMap(),
         splitMethod: SplitMethod,
         imgUrl: String = "",
         onSuccess: () -> Unit
@@ -65,12 +66,13 @@ class BillViewModel : ViewModel() {
 
         val myBill = Bill(
             billId = UUID.randomUUID().toString(),
+            groupId = groupId,
+            authorId = auth.currentUser?.uid ?: "",
             billTitle = title,
+            billDate = Date(System.currentTimeMillis()),
             billItems = billItems,
             itemAssignments = itemAssignments,
             splitMethod = splitMethod,
-            billDate = Date(System.currentTimeMillis()),
-            authorId = auth.currentUser?.uid ?: "",
             imgUrl = imgUrl
         )
 
@@ -79,6 +81,7 @@ class BillViewModel : ViewModel() {
         billsCollection.add(myBill)
             .addOnSuccessListener {
                 billUploadUiState = BillUploadUiState.BillUploadSuccess
+                onSuccess()
             }
             .addOnFailureListener {
                 billUploadUiState = BillUploadUiState.ErrorDuringBillUpload(it.message)
@@ -90,6 +93,7 @@ class BillViewModel : ViewModel() {
      */
     @RequiresApi(Build.VERSION_CODES.P)
     fun uploadBillImage(
+        groupId: String,
         contentResolver: ContentResolver,
         imageUri: Uri,
         title: String,
@@ -119,8 +123,9 @@ class BillViewModel : ViewModel() {
 
                 billUploadUiState = BillUploadUiState.ImageUploadSuccess
 
-                // Upload the bill including the image URL
+                // Now upload the bill itself with the image URL
                 uploadBill(
+                    groupId = groupId,
                     title = title,
                     billItems = billItems,
                     itemAssignments = itemAssignments,
@@ -133,6 +138,7 @@ class BillViewModel : ViewModel() {
             }
         }
     }
+
     fun loadMembersForGroup(
         groupId: String,
         onResult: (List<Pair<String, String>>) -> Unit
@@ -175,6 +181,10 @@ class BillViewModel : ViewModel() {
             }
     }
 
+    /**
+     * Updates group balances in Firestore after a bill is uploaded.
+     * Assumes "memberIds" is a List<String> and "balances" is a Map<String, Double>.
+     */
     fun updateBalance(
         groupId: String,
         billItems: List<Item>,
@@ -188,7 +198,8 @@ class BillViewModel : ViewModel() {
             val groupSnap = tx.get(groupRef)
 
             val members = groupSnap.get("memberIds") as? List<String> ?: emptyList()
-            val existingBalances = groupSnap.get("balances") as? Map<String, Double> ?: mapOf()
+            val existingBalances =
+                groupSnap.get("balances") as? Map<String, Double> ?: mapOf()
 
             // Start with the existing balances
             val newBalances = existingBalances.toMutableMap()
@@ -202,9 +213,11 @@ class BillViewModel : ViewModel() {
                 // Everyone pays equal portion of total bill
                 SplitMethod.EQUAL -> {
                     val total = billItems.sumOf { it.itemPrice }
-                    val perPerson = total / members.size
-                    members.forEach { uid ->
-                        newBalances[uid] = (newBalances[uid] ?: 0.0) + perPerson
+                    if (members.isNotEmpty()) {
+                        val perPerson = total / members.size
+                        members.forEach { uid ->
+                            newBalances[uid] = (newBalances[uid] ?: 0.0) + perPerson
+                        }
                     }
                 }
 
@@ -218,14 +231,16 @@ class BillViewModel : ViewModel() {
                 }
             }
 
-            // Write back updated balances
-            tx.update(groupRef, "balances", newBalances)
+            // Write back updated balances (Map<String, Double>)
+            tx.update(groupRef, "balances", newBalances as Map<String, Double>)
         }
     }
-
 }
 
-
+/**
+ * Separate FileProvider used for image Uris (camera/gallery).
+ * This stays as its own class, not part of the ViewModel.
+ */
 class ComposeFileProvider : FileProvider(
     hu.ait.maral.fairshare.R.xml.filepaths
 ) {
@@ -239,7 +254,7 @@ class ComposeFileProvider : FileProvider(
                 directory,
             )
             val authority = context.packageName + ".fileprovider"
-            return getUriForFile(
+            return FileProvider.getUriForFile(
                 context,
                 authority,
                 file,
