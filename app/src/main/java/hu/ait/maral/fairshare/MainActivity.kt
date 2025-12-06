@@ -36,6 +36,7 @@ import hu.ait.maral.fairshare.ui.screen.start.SplashScreen
 import hu.ait.maral.fairshare.ui.theme.FairShareTheme
 
 class MainActivity : ComponentActivity() {
+    @RequiresApi(Build.VERSION_CODES.P)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -98,11 +99,10 @@ fun NavGraph(modifier: Modifier) {
             // HOME SCREEN
             entry<HomeScreenKey> {
                 val currentUser = FirebaseAuth.getInstance().currentUser
-                val userId = currentUser?.uid ?: ""  // or handle null more strictly
+                val userId = currentUser?.uid ?: ""
 
                 HomeScreen(onNotificationsClick = {
                     backStack.add(NotificationScreenKey)
-
                 }, onRoomClick = { groupId ->
                     backStack.add(RoomScreenKey(groupId))
                 }, onProfileClick = {backStack.add(ProfileScreenKey(userId))})
