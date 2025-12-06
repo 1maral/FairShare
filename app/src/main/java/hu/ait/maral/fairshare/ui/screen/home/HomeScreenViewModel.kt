@@ -10,6 +10,10 @@ import kotlin.jvm.java
 
 class HomeScreenViewModel : ViewModel() {
 
+    var preferredCurrency = mutableStateOf("EUR")
+        private set
+
+
     var groups = mutableStateOf<List<Group>>(emptyList())
         private set
 
@@ -168,4 +172,18 @@ class HomeScreenViewModel : ViewModel() {
             errorMessage.value = e.localizedMessage
         }
     }
+
+    fun loadUserPreferredCurrency() {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+
+        FirebaseFirestore.getInstance()
+            .collection("users")
+            .document(uid)
+            .get()
+            .addOnSuccessListener { snap ->
+                val user = snap.toObject(User::class.java)
+                preferredCurrency.value = user?.preferredCurrency ?: "EUR"
+            }
+    }
+
 }

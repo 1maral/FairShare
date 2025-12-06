@@ -1,6 +1,5 @@
 package hu.ait.maral.fairshare
 
-import android.R.attr.onClick
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -18,7 +17,7 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
 import androidx.navigation3.scene.rememberSceneSetupNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
-import com.google.firebase.auth.FirebaseAuth
+import dagger.hilt.android.AndroidEntryPoint
 import hu.ait.maral.fairshare.ui.navigation.BillScreenKey
 import hu.ait.maral.fairshare.ui.navigation.HomeScreenKey
 import hu.ait.maral.fairshare.ui.navigation.LoginScreenKey
@@ -27,7 +26,6 @@ import hu.ait.maral.fairshare.ui.navigation.ProfileScreenKey
 import hu.ait.maral.fairshare.ui.navigation.RoomScreenKey
 import hu.ait.maral.fairshare.ui.navigation.SignUpScreenKey
 import hu.ait.maral.fairshare.ui.navigation.SplashScreenKey
-import hu.ait.maral.fairshare.ui.navigation.TestScreenKey
 import hu.ait.maral.fairshare.ui.screen.BillScreen
 import hu.ait.maral.fairshare.ui.screen.RoomScreen
 import hu.ait.maral.fairshare.ui.screen.home.HomeScreen
@@ -36,9 +34,9 @@ import hu.ait.maral.fairshare.ui.screen.profile.ProfileScreen
 import hu.ait.maral.fairshare.ui.screen.start.LoginScreen
 import hu.ait.maral.fairshare.ui.screen.start.SignUpScreen
 import hu.ait.maral.fairshare.ui.screen.start.SplashScreen
-import hu.ait.maral.fairshare.ui.screen.test.RatesScreen
 import hu.ait.maral.fairshare.ui.theme.FairShareTheme
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.P)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -121,9 +119,6 @@ fun NavGraph(modifier: Modifier) {
             //PROFILE SCREEN
             entry<ProfileScreenKey> { key -> ProfileScreen()}
 
-            entry<TestScreenKey> {
-                RatesScreen()
-            }
 
             // BILL UPLOAD SCREEN
             entry<BillScreenKey> {

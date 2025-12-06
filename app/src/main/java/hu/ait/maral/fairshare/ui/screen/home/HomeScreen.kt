@@ -1,11 +1,15 @@
 package hu.ait.maral.fairshare.ui.screen.home
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
-import androidx.compose.material3.CardDefaults.elevatedCardElevation
+import androidx.compose.material3.CardDefaults.cardColors
+import androidx.compose.material3.CardDefaults.cardElevation
 import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -14,19 +18,20 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddCircle
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Person
+import hu.ait.maral.fairshare.data.FxRates
+import hu.ait.maral.fairshare.ui.screen.rate.RatesViewModel
 import hu.ait.maral.fairshare.ui.theme.BackgroundPink
 import hu.ait.maral.fairshare.ui.theme.ButtonGreen
 import hu.ait.maral.fairshare.ui.theme.LogoGreen
+import kotlin.math.min
 
 data class GroupUi(
     val groupId: String,
     val name: String,
     val members: List<String>,
+    // interpreted as *already converted* balances for display
     val balances: List<Double>
 )
 
@@ -34,6 +39,7 @@ data class GroupUi(
 @Composable
 fun HomeScreen(
     viewModel: HomeScreenViewModel = viewModel(),
+    ratesViewModel: RatesViewModel = hiltViewModel(),
     onNotificationsClick: () -> Unit = {},
     onProfileClick: () -> Unit = {},
     onRoomClick: (String) -> Unit
@@ -42,11 +48,15 @@ fun HomeScreen(
     val isLoading = viewModel.isLoading.value
     val errorMessage = viewModel.errorMessage.value
 
+    val userCurrency = viewModel.preferredCurrency.value
+    val fxRates = ratesViewModel.fxRates.value
+
     var isAddGroupDialogOpen by remember { mutableStateOf(false) }
     var groupName by remember { mutableStateOf("") }
     var memberEmails by remember { mutableStateOf(listOf("")) }
 
     LaunchedEffect(Unit) {
+        viewModel.loadUserPreferredCurrency()
         viewModel.loadGroupsForUser()
     }
 
@@ -68,13 +78,25 @@ fun HomeScreen(
                 ),
                 actions = {
                     IconButton(onClick = { onProfileClick() }) {
-                        Icon(Icons.Filled.Person, contentDescription = "Profile", tint = Color.White)
+                        Icon(
+                            Icons.Filled.Person,
+                            contentDescription = "Profile",
+                            tint = Color.White
+                        )
                     }
                     IconButton(onClick = { onNotificationsClick() }) {
-                        Icon(Icons.Filled.Notifications, contentDescription = "Notifications", tint = Color.White)
+                        Icon(
+                            Icons.Filled.Notifications,
+                            contentDescription = "Notifications",
+                            tint = Color.White
+                        )
                     }
                     IconButton(onClick = { isAddGroupDialogOpen = true }) {
-                        Icon(Icons.Filled.AddCircle, contentDescription = "Add Group", tint = Color.White)
+                        Icon(
+                            Icons.Filled.AddCircle,
+                            contentDescription = "Add Group",
+                            tint = Color.White
+                        )
                     }
                 }
             )
@@ -88,7 +110,10 @@ fun HomeScreen(
         ) {
 
             if (isLoading) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
                     CircularProgressIndicator(color = ButtonGreen)
                 }
             } else if (errorMessage != null) {
@@ -108,6 +133,17 @@ fun HomeScreen(
             } else {
                 LazyColumn {
                     items(groups) { group ->
+
+                        // Convert each balance from EUR -> userCurrency for display
+                        val convertedBalances: List<Double> =
+                            group.balances.map { eurValue ->
+                                convertAmount(
+                                    amountEur = eurValue,
+                                    userCurrency = userCurrency,
+                                    fxRates = fxRates
+                                )
+                            }
+
                         GroupCard(
                             modifier = Modifier.fillMaxWidth(),
                             onClick = { onRoomClick(group.groupId) },
@@ -115,8 +151,9 @@ fun HomeScreen(
                                 groupId = group.groupId,
                                 name = group.name,
                                 members = group.members,
-                                balances = group.balances
-                            )
+                                balances = convertedBalances
+                            ),
+                            currencyCode = userCurrency
                         )
                     }
                 }
@@ -127,7 +164,11 @@ fun HomeScreen(
             AlertDialog(
                 onDismissRequest = { isAddGroupDialogOpen = false },
                 title = {
-                    Text("Create new group", fontWeight = FontWeight.Bold, color = ButtonGreen)
+                    Text(
+                        "Create new group",
+                        fontWeight = FontWeight.Bold,
+                        color = ButtonGreen
+                    )
                 },
                 text = {
                     Column {
@@ -148,7 +189,9 @@ fun HomeScreen(
                             OutlinedTextField(
                                 value = email,
                                 onValueChange = { new ->
-                                    memberEmails = memberEmails.toMutableList().also { it[index] = new }
+                                    memberEmails = memberEmails.toMutableList().also {
+                                        it[index] = new
+                                    }
                                 },
                                 placeholder = { Text("email@fairshare.com") },
                                 modifier = Modifier
@@ -167,7 +210,9 @@ fun HomeScreen(
                 },
                 confirmButton = {
                     Button(
-                        colors = ButtonDefaults.buttonColors(containerColor = ButtonGreen),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = ButtonGreen
+                        ),
                         onClick = {
                             viewModel.createGroup(groupName, memberEmails)
                             isAddGroupDialogOpen = false
@@ -194,21 +239,35 @@ fun HomeScreen(
     }
 }
 
+private fun convertAmount(
+    amountEur: Double,
+    userCurrency: String,
+    fxRates: FxRates?
+): Double {
+    if (fxRates == null) return amountEur
+    val rate = fxRates.rates[userCurrency] ?: 1.0
+    return amountEur * rate
+}
+
+private fun formatAmount(amount: Double): String {
+    return String.format("%.2f", amount)
+}
 
 @Composable
 fun GroupCard(
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
-    group: GroupUi
+    group: GroupUi,
+    currencyCode: String
 ) {
-    val memberCount = minOf(group.members.size, group.balances.size)
+    val memberCount = min(group.members.size, group.balances.size)
 
     Card(
         onClick = onClick,
         modifier = modifier
             .padding(vertical = 8.dp),
-        elevation = CardDefaults.cardElevation(6.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF0F5))
+        elevation = cardElevation(6.dp),
+        colors = cardColors(containerColor = Color(0xFFFFF0F5))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
 
@@ -238,14 +297,14 @@ fun GroupCard(
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            // BALANCES ROW
+            // BALANCES ROW (converted + labeled)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 for (i in 0 until memberCount) {
                     Text(
-                        text = "$${group.balances[i]}",
+                        text = "${currencyCode} ${formatAmount(group.balances[i])}",
                         modifier = Modifier.weight(1f),
                         fontWeight = FontWeight.SemiBold,
                         color = Color(0xFFAA4A44)
