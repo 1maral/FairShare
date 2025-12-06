@@ -21,7 +21,8 @@ import hu.ait.maral.fairshare.ui.theme.ButtonGreen
 @Composable
 fun RoomScreen(
     groupId: String,
-    viewModel: RoomViewModel = viewModel()
+    viewModel: RoomViewModel = viewModel(),
+    onAddBillClick: () -> Unit
 ) {
     LaunchedEffect(groupId) {
         viewModel.loadGroup(groupId)
@@ -46,6 +47,18 @@ fun RoomScreen(
                 )
             )
 
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = onAddBillClick,
+                containerColor = ButtonGreen
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Add Bill",
+                    tint = Color.White
+                )
+            }
         }
     ) { paddingValues ->
 

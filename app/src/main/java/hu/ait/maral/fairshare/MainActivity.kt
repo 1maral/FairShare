@@ -19,6 +19,7 @@ import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
 import androidx.navigation3.scene.rememberSceneSetupNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.google.firebase.auth.FirebaseAuth
+import hu.ait.maral.fairshare.ui.navigation.BillScreenKey
 import hu.ait.maral.fairshare.ui.navigation.HomeScreenKey
 import hu.ait.maral.fairshare.ui.navigation.LoginScreenKey
 import hu.ait.maral.fairshare.ui.navigation.NotificationScreenKey
@@ -26,6 +27,7 @@ import hu.ait.maral.fairshare.ui.navigation.ProfileScreenKey
 import hu.ait.maral.fairshare.ui.navigation.RoomScreenKey
 import hu.ait.maral.fairshare.ui.navigation.SignUpScreenKey
 import hu.ait.maral.fairshare.ui.navigation.SplashScreenKey
+import hu.ait.maral.fairshare.ui.screen.BillScreen
 import hu.ait.maral.fairshare.ui.screen.RoomScreen
 import hu.ait.maral.fairshare.ui.screen.home.HomeScreen
 import hu.ait.maral.fairshare.ui.screen.notifications.NotificationsScreen
@@ -111,10 +113,17 @@ fun NavGraph(modifier: Modifier) {
             }
 
             entry<RoomScreenKey> { key ->
-                RoomScreen(groupId = key.groupId)
+                RoomScreen(groupId = key.groupId,
+                    onAddBillClick = { backStack.add(BillScreenKey) })
             }
 
+            //PROFILE SCREEN
             entry<ProfileScreenKey> { key -> ProfileScreen()}
+
+            // BILL UPLOAD SCREEN
+            entry<BillScreenKey> {
+                BillScreen()
+            }
         }
     )
 }
