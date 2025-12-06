@@ -114,15 +114,15 @@ fun NavGraph(modifier: Modifier) {
 
             entry<RoomScreenKey> { key ->
                 RoomScreen(groupId = key.groupId,
-                    onAddBillClick = { backStack.add(BillScreenKey) })
+                    onAddBillClick = { backStack.add(BillScreenKey(key.groupId)) })
             }
             //PROFILE SCREEN
             entry<ProfileScreenKey> { key -> ProfileScreen()}
 
 
             // BILL UPLOAD SCREEN
-            entry<BillScreenKey> {
-                BillScreen()
+            entry<BillScreenKey> { key ->
+                BillScreen(key.groupId)
             }
         }
     )

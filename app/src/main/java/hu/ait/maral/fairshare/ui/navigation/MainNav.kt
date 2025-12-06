@@ -27,4 +27,4 @@ data object ProfileScreenKey: NavKey
 
 
 @Serializable
-data object BillScreenKey: NavKey
+data class BillScreenKey(val groupId: String): NavKey
