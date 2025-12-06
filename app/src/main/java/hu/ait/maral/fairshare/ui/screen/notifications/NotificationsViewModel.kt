@@ -43,7 +43,12 @@ class NotificationsViewModel : ViewModel() {
             }
     }
 
-    /** User accepts an invite: move uid from pendingMemberIds → memberIds (+ add email to members) */
+    /**
+     * User accepts an invite:
+     * - move uid from pendingMemberIds → memberIds
+     * - add their display name to members
+     * - ensure balances is a Map<memberId, Double> and add entry for this user
+     */
     fun acceptGroup(group: Group) {
         val user = auth.currentUser ?: return
         val groupRef = db.collection("groups").document(group.groupId)
@@ -59,14 +64,37 @@ class NotificationsViewModel : ViewModel() {
                 (groupSnap.get("pendingMemberIds") as? List<String>) ?: emptyList()
             val currentMembers =
                 (groupSnap.get("members") as? List<String>) ?: emptyList()
-            val currentBalancesAny =
-                (groupSnap.get("balances") as? List<*>) ?: emptyList<Any>()
 
-            val currentBalances = currentBalancesAny.map {
-                (it as? Number)?.toDouble() ?: 0.0
+            // --- balances: support BOTH old list format and new map format ---
+            val rawBalances = groupSnap.get("balances")
+
+            val balancesMap: MutableMap<String, Double> = when (rawBalances) {
+                is Map<*, *> -> {
+                    // New schema already: Map<String, Number>
+                    rawBalances.mapNotNull { (k, v) ->
+                        val key = k as? String ?: return@mapNotNull null
+                        val value = (v as? Number)?.toDouble() ?: 0.0
+                        key to value
+                    }.toMap().toMutableMap()
+                }
+
+                is List<*> -> {
+                    // Old schema: List<Double> aligned with memberIds by index
+                    val list = rawBalances.map { (it as? Number)?.toDouble() ?: 0.0 }
+                    mutableMapOf<String, Double>().apply {
+                        for (i in currentMemberIds.indices) {
+                            val id = currentMemberIds[i]
+                            val value = list.getOrNull(i) ?: 0.0
+                            this[id] = value
+                        }
+                    }
+                }
+
+                else -> mutableMapOf()
             }
+            // ----------------------------------------------------------------
 
-            // Fetch display name for this uid
+            // Display name for the accepting user
             val nameFromDoc = userSnap.getString("name")
             val displayName = nameFromDoc
                 ?: user.displayName
@@ -77,17 +105,20 @@ class NotificationsViewModel : ViewModel() {
             val updatedMemberIds = (currentMemberIds + user.uid).distinct()
             val updatedPendingIds = currentPendingIds.filter { it != user.uid }
 
-            // 2) Add name + balance 0.0 only NOW (when they accept)
+            // 2) Add name + ensure they have a 0.0 entry in balances
             val updatedMembers = currentMembers + displayName
-            val updatedBalances = currentBalances + 0.0
+            if (!balancesMap.containsKey(user.uid)) {
+                balancesMap[user.uid] = 0.0
+            }
 
+            // 3) Write everything back, always as MAP for balances
             tx.update(
                 groupRef,
                 mapOf(
                     "memberIds" to updatedMemberIds,
                     "pendingMemberIds" to updatedPendingIds,
                     "members" to updatedMembers,
-                    "balances" to updatedBalances
+                    "balances" to balancesMap
                 )
             )
         }.addOnSuccessListener {
