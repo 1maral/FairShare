@@ -1,5 +1,6 @@
 package hu.ait.maral.fairshare
 
+import android.R.attr.onClick
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -18,8 +19,10 @@ import androidx.navigation3.ui.NavDisplay
 import hu.ait.maral.fairshare.ui.navigation.HomeScreenKey
 import hu.ait.maral.fairshare.ui.navigation.LoginScreenKey
 import hu.ait.maral.fairshare.ui.navigation.NotificationScreenKey
+import hu.ait.maral.fairshare.ui.navigation.RoomScreenKey
 import hu.ait.maral.fairshare.ui.navigation.SignUpScreenKey
 import hu.ait.maral.fairshare.ui.navigation.SplashScreenKey
+import hu.ait.maral.fairshare.ui.screen.RoomScreen
 import hu.ait.maral.fairshare.ui.screen.home.HomeScreen
 import hu.ait.maral.fairshare.ui.screen.notifications.NotificationsScreen
 import hu.ait.maral.fairshare.ui.screen.start.LoginScreen
@@ -89,11 +92,18 @@ fun NavGraph(modifier: Modifier) {
             entry<HomeScreenKey> {
                 HomeScreen(onNotificationsClick = {
                     backStack.add(NotificationScreenKey)
+
+                }, onRoomClick = { groupId ->
+                    backStack.add(RoomScreenKey(groupId))
                 })
             }
 
             entry<NotificationScreenKey>{
                 NotificationsScreen(onBack = { backStack.removeLastOrNull() })
+            }
+
+            entry<RoomScreenKey> { key ->
+                RoomScreen(groupId = key.groupId)
             }
         }
     )
