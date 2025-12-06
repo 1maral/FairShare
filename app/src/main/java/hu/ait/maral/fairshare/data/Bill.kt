@@ -10,7 +10,7 @@ data class Bill(
     var billTitle: String = "",
     var billDate: Date,
     var billItems: List<Item> = listOf(),
-    var itemAssignments: Map<String, List<String>> = mapOf(),
+    var itemAssignments: Map<String, String> = emptyMap<String, String>(),
     var splitMethod: SplitMethod = SplitMethod.BY_ITEM,
     var imgUrl: String = ""
 )

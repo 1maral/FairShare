@@ -56,7 +56,7 @@ class BillViewModel : ViewModel() {
     fun uploadBill(
         title: String,
         billItems: List<Item>,
-        itemAssignments: Map<String, List<String>> = mapOf(),
+        itemAssignments: Map<String, String> = mapOf(),
         splitMethod: SplitMethod = SplitMethod.EQUAL,
         imgUrl: String = ""
     ) {
@@ -93,7 +93,7 @@ class BillViewModel : ViewModel() {
         imageUri: Uri,
         title: String,
         billItems: List<Item>,
-        itemAssignments: Map<String, List<String>> = mapOf(),
+        itemAssignments: Map<String, String> = mapOf(),
         splitMethod: SplitMethod = SplitMethod.EQUAL,
         supabase: SupabaseClient = SupabaseProvider.supabase
     ) {

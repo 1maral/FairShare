@@ -52,13 +52,13 @@ dependencies {
     // Navigation
     implementation(libs.androidx.navigation)
     implementation(libs.androidx.navigation.compose)
-// Hilt Dependency Injection
+    // Hilt Dependency Injection
     implementation(libs.hilt.android)
     kapt(libs.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
     androidTestImplementation(libs.hilt.android.testing)
     testImplementation(libs.hilt.android.testing)
-// Retrofit
+    // Retrofit
     implementation(libs.retrofit)
     implementation(libs.kotlinx.serialization)
     implementation(libs.serialization.converter)
