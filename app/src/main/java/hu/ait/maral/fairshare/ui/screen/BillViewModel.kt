@@ -184,8 +184,7 @@ class BillViewModel : ViewModel() {
         groupId: String,
         billItems: List<Item>,
         itemAssignments: Map<String, String>,
-        splitMethod: SplitMethod,
-        onComplete: (Boolean, String?) -> Unit
+        splitMethod: SplitMethod
     ) {
         val db = FirebaseFirestore.getInstance()
         val groupRef = db.collection("groups").document(groupId)
@@ -195,10 +194,16 @@ class BillViewModel : ViewModel() {
             val groupSnap = tx.get(groupRef)
 
             val members = groupSnap.get("memberIds") as? List<String> ?: emptyList()
-            val existingBalances =
-                groupSnap.get("balances") as? Map<String, Double> ?: mapOf()
+
+            // FIX: Firestore stores 0 as Long, not Double
+            val rawBalances = groupSnap.get("balances") as? Map<String, Any> ?: emptyMap()
+            val existingBalances = rawBalances.mapValues { (_, v) ->
+                (v as Number).toDouble()
+            }
 
             val newBalances = existingBalances.toMutableMap()
+
+            // Ensure every member has an entry
             members.forEach { uid ->
                 if (!newBalances.containsKey(uid)) newBalances[uid] = 0.0
             }
@@ -224,18 +229,19 @@ class BillViewModel : ViewModel() {
                 }
             }
 
-            // The author fronted the whole bill → negative balance
+            // Author paid → subtract from their balance
             newBalances[authorId] = (newBalances[authorId] ?: 0.0) - total
 
-            tx.update(groupRef, "balances", newBalances as Map<String, Double>)
+            tx.update(groupRef, "balances", newBalances)
         }
-            .addOnSuccessListener {
-                onComplete(true, null)
-            }
             .addOnFailureListener { e ->
-                onComplete(false, e.message)
+                println("❌ Balance update FAILED: ${e.message}")
+            }
+            .addOnSuccessListener {
+                println("✅ Balance update SUCCESS")
             }
     }
+
 }
 
 /**
