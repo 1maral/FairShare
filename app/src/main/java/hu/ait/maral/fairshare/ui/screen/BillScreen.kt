@@ -60,7 +60,8 @@ import hu.ait.maral.fairshare.data.SplitMethod
 fun BillScreen(
     groupId: String,
     viewModel: BillViewModel = viewModel(),
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onUploadSuccess: () -> Unit
 ) {
     val context = LocalContext.current
 
@@ -371,7 +372,7 @@ fun BillScreen(
                         CircularProgressIndicator()
                     is BillUploadUiState.BillUploadSuccess,
                     is BillUploadUiState.ImageUploadSuccess ->
-                        Text("Bill uploaded successfully!")
+                        onUploadSuccess()
                     is BillUploadUiState.ErrorDuringBillUpload ->
                         Text("Error: ${state.error}")
                     is BillUploadUiState.ErrorDuringImageUpload ->
