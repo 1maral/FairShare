@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -20,6 +21,8 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -127,14 +130,20 @@ fun ProfileScreen(
                                         AsyncImage(
                                             model = localAvatarUri,
                                             contentDescription = "new avatar",
-                                            modifier = Modifier.fillMaxSize()
+                                            modifier = Modifier
+                                                .size(120.dp)
+                                                .clip(CircleShape),
+                                            contentScale = ContentScale.Crop
                                         )
                                     }
                                     avatarUrl != null -> {
                                         AsyncImage(
                                             model = avatarUrl,
                                             contentDescription = "current avatar",
-                                            modifier = Modifier.fillMaxSize()
+                                            modifier = Modifier
+                                                .size(120.dp)
+                                                .clip(CircleShape),
+                                            contentScale = ContentScale.Crop
                                         )
                                     }
                                     else -> {
@@ -142,7 +151,9 @@ fun ProfileScreen(
                                             imageVector = Icons.Default.Person,
                                             contentDescription = "avatar placeholder",
                                             tint = LogoGreen,
-                                            modifier = Modifier.size(80.dp)
+                                            modifier = Modifier
+                                                .size(120.dp)
+                                                .clip(CircleShape)
                                         )
                                     }
                                 }

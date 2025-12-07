@@ -10,6 +10,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -18,6 +19,8 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -50,10 +53,11 @@ fun SignUpScreen(
     var showPassword by rememberSaveable { mutableStateOf(false) }
     var showPasswordConfirm by rememberSaveable { mutableStateOf(false) }
 
-
-    val currencyOptions = listOf("USD", "EUR", "GBP", "HUF", "JPY",
+    val currencyOptions = listOf(
+        "USD", "EUR", "GBP", "HUF", "JPY",
         "CAD", "AUD", "CHF", "INR", "CNY",
-        "SEK", "NOK", "NZD", "MXN", "BRL")
+        "SEK", "NOK", "NZD", "MXN", "BRL"
+    )
     var isCurrencyExpanded by rememberSaveable { mutableStateOf(false) }
     var selectedCurrency by rememberSaveable { mutableStateOf(currencyOptions.first()) }
 
@@ -91,20 +95,26 @@ fun SignUpScreen(
                         Box(
                             modifier = Modifier
                                 .size(40.dp)
-                                .clickable { pickImageLauncher.launch("image/*") }
+                                .clickable { pickImageLauncher.launch("image/*") },
+                            contentAlignment = Alignment.Center
                         ) {
                             if (avatarUri != null) {
                                 AsyncImage(
                                     model = avatarUri,
                                     contentDescription = "avatar",
-                                    modifier = Modifier.fillMaxSize()
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .clip(CircleShape),
+                                    contentScale = ContentScale.Crop
                                 )
                             } else {
-                                // placeholder icon
                                 Icon(
                                     imageVector = Icons.Default.Person,
                                     contentDescription = "select avatar",
-                                    tint = LogoGreen
+                                    tint = LogoGreen,
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .clip(CircleShape)
                                 )
                             }
                         }
@@ -142,26 +152,35 @@ fun SignUpScreen(
                 contentPadding = PaddingValues(vertical = 18.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Avatar preview + upload button (redundant with topbar, but nice)
+                // Avatar preview + upload button
                 item {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Box(modifier = Modifier.size(120.dp)) {
+                        Box(
+                            modifier = Modifier
+                                .size(120.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
                             if (avatarUri != null) {
                                 AsyncImage(
                                     model = avatarUri,
                                     contentDescription = "avatar preview",
-                                    modifier = Modifier.fillMaxSize()
+                                    modifier = Modifier
+                                        .size(120.dp)
+                                        .clip(CircleShape),
+                                    contentScale = ContentScale.Crop
                                 )
                             } else {
                                 Icon(
                                     imageVector = Icons.Default.Person,
                                     contentDescription = "avatar placeholder",
                                     tint = LogoGreen,
-                                    modifier = Modifier.size(80.dp)
+                                    modifier = Modifier
+                                        .size(120.dp)
+                                        .clip(CircleShape)
                                 )
                             }
                         }
@@ -251,6 +270,7 @@ fun SignUpScreen(
                     )
                 }
 
+                // Preferred currency
                 item {
                     ExposedDropdownMenuBox(
                         expanded = isCurrencyExpanded,
@@ -267,7 +287,8 @@ fun SignUpScreen(
                                 .fillMaxWidth(),
                             trailingIcon = {
                                 ExposedDropdownMenuDefaults.TrailingIcon(expanded = isCurrencyExpanded)
-                            },colors = OutlinedTextFieldDefaults.colors(
+                            },
+                            colors = OutlinedTextFieldDefaults.colors(
                                 focusedContainerColor = BackgroundPink,
                                 unfocusedContainerColor = BackgroundPink,
                                 disabledContainerColor = BackgroundPink
@@ -277,14 +298,16 @@ fun SignUpScreen(
                         ExposedDropdownMenu(
                             expanded = isCurrencyExpanded,
                             onDismissRequest = { isCurrencyExpanded = false },
-                            modifier = Modifier.heightIn(max = 200.dp)) {
+                            modifier = Modifier.heightIn(max = 200.dp)
+                        ) {
                             currencyOptions.forEach { option ->
                                 DropdownMenuItem(
                                     text = { Text(option) },
                                     onClick = {
                                         selectedCurrency = option
                                         isCurrencyExpanded = false
-                                    }, colors = MenuDefaults.itemColors(
+                                    },
+                                    colors = MenuDefaults.itemColors(
                                         textColor = LogoGreen,
                                         leadingIconColor = LogoGreen,
                                         trailingIconColor = LogoGreen,
@@ -296,6 +319,7 @@ fun SignUpScreen(
                     }
                 }
 
+                // Payment methods
                 item {
                     Text("Payment methods", color = LogoGreen)
                     Spacer(modifier = Modifier.height(8.dp))
@@ -321,12 +345,12 @@ fun SignUpScreen(
                                     .fillMaxWidth(),
                                 trailingIcon = {
                                     ExposedDropdownMenuDefaults.TrailingIcon(expanded = isPaymentTypeExpanded)
-                                }, colors = OutlinedTextFieldDefaults.colors(
+                                },
+                                colors = OutlinedTextFieldDefaults.colors(
                                     focusedContainerColor = BackgroundPink,
                                     unfocusedContainerColor = BackgroundPink,
                                     disabledContainerColor = BackgroundPink
                                 )
-
                             )
 
                             ExposedDropdownMenu(
@@ -340,7 +364,8 @@ fun SignUpScreen(
                                         onClick = {
                                             selectedPaymentType = option
                                             isPaymentTypeExpanded = false
-                                        },  colors = MenuDefaults.itemColors(
+                                        },
+                                        colors = MenuDefaults.itemColors(
                                             textColor = LogoGreen,
                                             leadingIconColor = LogoGreen,
                                             trailingIconColor = LogoGreen,

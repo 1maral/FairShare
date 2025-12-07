@@ -3,6 +3,7 @@ package hu.ait.maral.fairshare.ui.screen.home
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Notifications
@@ -14,12 +15,15 @@ import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import hu.ait.maral.fairshare.data.FxRates
 import hu.ait.maral.fairshare.ui.screen.rate.RatesViewModel
 import hu.ait.maral.fairshare.ui.theme.BackgroundPink
@@ -31,8 +35,9 @@ import kotlin.math.min
 data class GroupUi(
     val groupId: String,
     val name: String,
-    val memberNames: List<String>,      // confirmed member names (no pending)
-    val memberBalances: List<Double>    // already converted to user's currency
+    val memberNames: List<String>,          // confirmed member names (no pending)
+    val memberBalances: List<Double>,       // already converted to user's currency
+    val memberAvatarUrls: List<String?>     // avatar URLs aligned with memberNames
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -141,9 +146,6 @@ fun HomeScreen(
                     LazyColumn {
                         items(groups) { group ->
 
-                            // Build aligned names + balances using the new Map<memberId, Double>
-                            // Only confirmed members (memberIds) are considered here; pending members
-                            // are kept separate in the Group data and not displayed.
                             val memberNames = mutableListOf<String>()
                             val memberBalances = mutableListOf<Double>()
 
@@ -151,6 +153,14 @@ fun HomeScreen(
                             val namesList = group.members      // parallel list of names
                             val balanceMap = group.balances    // Map<memberId, Double> in EUR
 
+                            // state list for avatar URLs, aligned with memberIds
+                            val avatarUrls = remember(group.groupId, memberIds.size) {
+                                mutableStateListOf<String?>().apply {
+                                    repeat(memberIds.size) { add(null) }
+                                }
+                            }
+
+                            // Build aligned names + balances
                             for (i in memberIds.indices) {
                                 val memberId = memberIds[i]
                                 val name = namesList.getOrNull(i) ?: "Member"
@@ -165,6 +175,17 @@ fun HomeScreen(
                                 memberBalances.add(balanceConverted)
                             }
 
+                            // Load avatars once per group
+                            LaunchedEffect(group.groupId) {
+                                memberIds.forEachIndexed { index, memberId ->
+                                    viewModel.fetchUserAvatar(memberId) { url ->
+                                        if (index < avatarUrls.size) {
+                                            avatarUrls[index] = url
+                                        }
+                                    }
+                                }
+                            }
+
                             GroupCard(
                                 modifier = Modifier.fillMaxWidth(),
                                 onClick = { onRoomClick(group.groupId) },
@@ -172,7 +193,8 @@ fun HomeScreen(
                                     groupId = group.groupId,
                                     name = group.name,
                                     memberNames = memberNames,
-                                    memberBalances = memberBalances
+                                    memberBalances = memberBalances,
+                                    memberAvatarUrls = avatarUrls
                                 ),
                                 currencyCode = userCurrency
                             )
@@ -282,7 +304,10 @@ fun GroupCard(
     group: GroupUi,
     currencyCode: String
 ) {
-    val memberCount = min(group.memberNames.size, group.memberBalances.size)
+    val memberCount = min(
+        min(group.memberNames.size, group.memberBalances.size),
+        group.memberAvatarUrls.size
+    )
 
     Card(
         onClick = onClick,
@@ -303,36 +328,70 @@ fun GroupCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // MEMBER ROW
+            // MEMBER NAME + AVATAR COLUMN
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 for (i in 0 until memberCount) {
-                    Text(
-                        text = group.memberNames[i],
+                    Column(
                         modifier = Modifier.weight(1f),
-                        fontWeight = FontWeight.Medium
-                    )
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        // Name
+                        Text(
+                            text = group.memberNames[i],
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 14.sp
+                        )
+
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        // Avatar (circle)
+                        val avatarUrl = group.memberAvatarUrls[i]
+                        if (avatarUrl != null) {
+                            AsyncImage(
+                                model = avatarUrl,
+                                contentDescription = "avatar",
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(CircleShape),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Filled.Person,
+                                contentDescription = "avatar placeholder",
+                                tint = LogoGreen,
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(CircleShape)
+                            )
+                        }
+                    }
                 }
             }
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-            // BALANCES ROW (converted + labeled)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 for (i in 0 until memberCount) {
-                    Text(
-                        text = "${currencyCode} ${formatAmount(group.memberBalances[i])}",
+                    Column(
                         modifier = Modifier.weight(1f),
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFFAA4A44)
-                    )
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "${currencyCode} ${formatAmount(group.memberBalances[i])}",
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFFAA4A44)
+                        )
+                    }
                 }
             }
+
         }
     }
 }

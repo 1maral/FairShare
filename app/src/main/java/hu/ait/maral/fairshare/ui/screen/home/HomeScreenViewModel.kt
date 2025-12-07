@@ -160,4 +160,16 @@ class HomeScreenViewModel : ViewModel() {
                     snap.toObject(User::class.java)?.preferredCurrency ?: "EUR"
             }
     }
+
+    fun fetchUserAvatar(uid: String, callback: (String?) -> Unit) {
+        db.collection("users").document(uid).get()
+            .addOnSuccessListener { snap ->
+                val url = snap.getString("profilePictureUrl")
+                callback(url)
+            }
+            .addOnFailureListener {
+                callback(null)
+            }
+    }
+
 }
