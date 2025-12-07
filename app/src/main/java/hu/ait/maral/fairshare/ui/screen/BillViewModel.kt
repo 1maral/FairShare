@@ -195,7 +195,7 @@ class BillViewModel : ViewModel() {
 
             val members = groupSnap.get("memberIds") as? List<String> ?: emptyList()
 
-            // FIX: Firestore stores 0 as Long, not Double
+            // Firestore stores numbers as Long sometimes → convert safely
             val rawBalances = groupSnap.get("balances") as? Map<String, Any> ?: emptyMap()
             val existingBalances = rawBalances.mapValues { (_, v) ->
                 (v as Number).toDouble()
@@ -203,7 +203,7 @@ class BillViewModel : ViewModel() {
 
             val newBalances = existingBalances.toMutableMap()
 
-            // Ensure every member has an entry
+            // Ensure all members exist in the map
             members.forEach { uid ->
                 if (!newBalances.containsKey(uid)) newBalances[uid] = 0.0
             }
@@ -211,11 +211,14 @@ class BillViewModel : ViewModel() {
             val total = billItems.sumOf { it.itemPrice }
 
             when (splitMethod) {
+
                 SplitMethod.EQUAL -> {
                     if (members.isNotEmpty()) {
                         val perPerson = total / members.size
+
+                        // ❗ Members owe money → NEGATIVE
                         members.forEach { uid ->
-                            newBalances[uid] = (newBalances[uid] ?: 0.0) + perPerson
+                            newBalances[uid] = (newBalances[uid] ?: 0.0) - perPerson
                         }
                     }
                 }
@@ -223,14 +226,16 @@ class BillViewModel : ViewModel() {
                 SplitMethod.BY_ITEM -> {
                     billItems.forEach { item ->
                         val assignedUid = itemAssignments[item.itemId] ?: return@forEach
+
+                        // ❗ Each assigned person owes their item price → NEGATIVE
                         newBalances[assignedUid] =
-                            (newBalances[assignedUid] ?: 0.0) + item.itemPrice
+                            (newBalances[assignedUid] ?: 0.0) - item.itemPrice
                     }
                 }
             }
 
-            // Author paid → subtract from their balance
-            newBalances[authorId] = (newBalances[authorId] ?: 0.0) - total
+            // ❗ Author paid the whole bill → POSITIVE
+            newBalances[authorId] = (newBalances[authorId] ?: 0.0) + total
 
             tx.update(groupRef, "balances", newBalances)
         }
