@@ -17,6 +17,7 @@ data class Bill(
 data class Item(
     var itemName: String = "",
     var itemPrice: Double = 0.0,
+    val itemCurrency : String = "EUR",
     val itemId: String = UUID.randomUUID().toString(),
 )
 enum class SplitMethod {

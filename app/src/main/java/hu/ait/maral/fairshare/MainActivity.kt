@@ -118,7 +118,8 @@ fun NavGraph(modifier: Modifier) {
 
 
             entry<BillScreenKey> { key ->
-                BillScreen(key.groupId)
+                BillScreen(key.groupId,
+                    onBack = { backStack.removeLastOrNull() })
             }
         }
     )

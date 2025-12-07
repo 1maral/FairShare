@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -17,13 +18,21 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -44,16 +53,22 @@ import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.shouldShowRationale
 import hu.ait.maral.fairshare.data.Item
 import hu.ait.maral.fairshare.data.SplitMethod
+
+@OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterial3Api::class)
 @RequiresApi(Build.VERSION_CODES.P)
 @Composable
 fun BillScreen(
     groupId: String,
-    viewModel: BillViewModel = viewModel()
+    viewModel: BillViewModel = viewModel(),
+    onBack: () -> Unit
 ) {
     val context = LocalContext.current
 
-    // Local states
+    // ------------------------------
+    //  STATE
+    // ------------------------------
     var billTitle by remember { mutableStateOf("") }
+    var totalPrice by remember { mutableStateOf("") }
     var newItemName by remember { mutableStateOf("") }
     var newItemPrice by remember { mutableStateOf("") }
 
@@ -61,199 +76,314 @@ fun BillScreen(
     val itemAssignments = remember { mutableStateMapOf<String, String>() }
     var splitMethod by remember { mutableStateOf(SplitMethod.EQUAL) }
 
-    // Members (uid -> name)
-    val members = remember { mutableStateListOf<Pair<String, String>>() } // (uid, name)
+    val currencyOptions = listOf(
+        "USD", "EUR", "GBP", "HUF", "JPY", "CAD",
+        "AUD", "CHF", "INR", "CNY", "SEK", "NOK",
+        "NZD", "MXN", "BRL"
+    )
+    var selectedCurrency by remember { mutableStateOf(currencyOptions[0]) }
+    var currencyExpanded by remember { mutableStateOf(false) }
 
-    // Load members for dropdown
+    val members = remember { mutableStateListOf<Pair<String, String>>() }
     LaunchedEffect(groupId) {
         viewModel.loadMembersForGroup(groupId) { list ->
             members.clear()
-            members.addAll(list)   // each item: Pair(uid, displayName)
+            members.addAll(list)
         }
     }
 
-    // Camera image state
-    var hasImage by remember { mutableStateOf(false) }
+    // ------------------------------
+    // CAMERA LOGIC
+    // ------------------------------
     var imageUri by remember { mutableStateOf<Uri?>(null) }
-
+    var hasImage by remember { mutableStateOf(false) }
     val cameraLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.TakePicture()
-    ) { success ->
-        hasImage = success
+    ) { success -> hasImage = success }
+    val cameraPermissionState =
+        rememberPermissionState(android.Manifest.permission.CAMERA)
+    fun takePhoto() {
+        val uri = ComposeFileProvider.getImageUri(context)
+        imageUri = uri
+        cameraLauncher.launch(uri)
     }
 
-    Column(Modifier.padding(16.dp)) {
-
-        OutlinedTextField(
-            value = billTitle,
-            onValueChange = { billTitle = it },
-            label = { Text("Bill Title") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(Modifier.height(16.dp))
-
-        // ---- ADD NEW ITEM ROW ----
-        Row(verticalAlignment = Alignment.CenterVertically) {
-
-            OutlinedTextField(
-                value = newItemName,
-                onValueChange = { newItemName = it },
-                label = { Text("Item") },
-                modifier = Modifier.weight(1f)
-            )
-
-            Spacer(Modifier.width(8.dp))
-
-            OutlinedTextField(
-                value = newItemPrice,
-                onValueChange = { newItemPrice = it },
-                label = { Text("Price") },
-                modifier = Modifier.width(90.dp)
+    // ------------------------------
+    // LAYOUT
+    // ------------------------------
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Create Bill") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                }
             )
         }
-
-        // Dropdown for assignment
-        var expanded by remember { mutableStateOf(false) }
-        var selectedUserName by remember { mutableStateOf("Assign to...") }
-        var selectedUserId by remember { mutableStateOf<String?>(null) }
-
-        Box {
-            OutlinedButton(onClick = { expanded = true }) {
-                Text(selectedUserName)
-            }
-            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                members.forEach { (uid, name) ->
-                    DropdownMenuItem(
-                        text = { Text(name) },
-                        onClick = {
-                            selectedUserId = uid
-                            selectedUserName = name
-                            expanded = false
-                        }
-                    )
-                }
-            }
-        }
-
-        Button(
-            onClick = {
-                val price = newItemPrice.toDoubleOrNull()
-                if (newItemName.isNotBlank() && price != null && selectedUserId != null) {
-
-                    val item = Item(
-                        itemName = newItemName,
-                        itemPrice = price
-                    )
-                    billItems.add(item)
-                    itemAssignments[item.itemId] = selectedUserId!!
-
-                    newItemName = ""
-                    newItemPrice = ""
-                    selectedUserId = null
-                    selectedUserName = "Assign to..."
-                }
-            }
+    ) { paddingValues ->
+        LazyColumn(
+            contentPadding = paddingValues,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
         ) {
-            Text("Add Item")
-        }
-
-        Spacer(Modifier.height(24.dp))
-
-        // Show items
-        LazyColumn {
-            items(billItems) { item ->
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text("${item.itemName} - $${item.itemPrice}")
-                    Text(
-                        members.find { it.first == itemAssignments[item.itemId] }?.second
-                            ?: "Unassigned"
-                    )
-                }
-            }
-        }
-
-        Spacer(Modifier.height(24.dp))
-
-// ---- Split Method Dropdown ----
-        var splitExpanded by remember { mutableStateOf(false) }
-
-        Box {
-            OutlinedButton(onClick = { splitExpanded = true }) {
-                Text(
-                    "Split method: ${
-                        splitMethod.name.lowercase().replaceFirstChar { it.uppercase() }
-                    }"
+            item {
+                OutlinedTextField(
+                    value = billTitle,
+                    onValueChange = { billTitle = it },
+                    label = { Text("Bill Title") },
+                    modifier = Modifier.fillMaxWidth()
                 )
+                Spacer(Modifier.height(16.dp))
             }
-            DropdownMenu(
-                expanded = splitExpanded,
-                onDismissRequest = { splitExpanded = false }
-            ) {
-                DropdownMenuItem(
-                    text = { Text("Equal") },
-                    onClick = {
-                        splitMethod = SplitMethod.EQUAL
-                        splitExpanded = false
+
+            // Currency Dropdown
+            item {
+                Text("Currency")
+                Box {
+                    OutlinedButton(
+                        onClick = { currencyExpanded = true },
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text(selectedCurrency) }
+                    DropdownMenu(
+                        expanded = currencyExpanded,
+                        onDismissRequest = { currencyExpanded = false }
+                    ) {
+                        currencyOptions.forEach { currency ->
+                            DropdownMenuItem(
+                                text = { Text(currency) },
+                                onClick = {
+                                    selectedCurrency = currency
+                                    currencyExpanded = false
+                                }
+                            )
+                        }
                     }
-                )
-                DropdownMenuItem(
-                    text = { Text("By item") },
-                    onClick = {
-                        splitMethod = SplitMethod.BY_ITEM
-                        splitExpanded = false
+                }
+                Spacer(Modifier.height(16.dp))
+            }
+
+            // Camera Section
+            item {
+                Text("Bill Photo")
+                if (cameraPermissionState.status.isGranted) {
+                    Button(onClick = { takePhoto() }) { Text("Take Photo") }
+                } else {
+                    Column {
+                        val text = if (cameraPermissionState.status.shouldShowRationale)
+                            "Camera permission is needed to take a bill photo."
+                        else
+                            "Please grant camera permission."
+                        Text(text)
+                        Button(onClick = { cameraPermissionState.launchPermissionRequest() }) {
+                            Text("Allow Camera")
+                        }
                     }
-                )
-            }
-        }
-
-        Spacer(Modifier.height(24.dp))
-
-        // Finish & upload bill
-        Button(onClick = {
-            if (imageUri == null) {
-                viewModel.uploadBill(
-                    groupId = groupId,
-                    title = billTitle,
-                    billItems = billItems,
-                    itemAssignments = itemAssignments,
-                    splitMethod = splitMethod
-                ) {
-                    // After upload completes → update balances
-                    viewModel.updateBalance(
-                        groupId = groupId,
-                        billItems = billItems,
-                        itemAssignments = itemAssignments,
-                        splitMethod = splitMethod
+                }
+                if (hasImage && imageUri != null) {
+                    AsyncImage(
+                        model = imageUri,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(200.dp)
+                            .padding(top = 12.dp)
                     )
                 }
-            } else {
-                viewModel.uploadBillImage(
-                    groupId = groupId,
-                    contentResolver = context.contentResolver,
-                    imageUri = imageUri!!,
-                    title = billTitle,
-                    billItems = billItems,
-                    itemAssignments = itemAssignments,
-                    splitMethod = splitMethod
-                ) {
-                    // After upload completes → update balances
-                    viewModel.updateBalance(
-                        groupId = groupId,
-                        billItems = billItems,
-                        itemAssignments = itemAssignments,
-                        splitMethod = splitMethod
+                Spacer(Modifier.height(16.dp))
+            }
+
+            // Split Method Dropdown
+            item {
+                Text("Split Method")
+                var splitExpanded by remember { mutableStateOf(false) }
+                Box {
+                    OutlinedButton(
+                        onClick = { splitExpanded = true },
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text(splitMethod.name.lowercase().replaceFirstChar { it.uppercase() }) }
+                    DropdownMenu(
+                        expanded = splitExpanded,
+                        onDismissRequest = { splitExpanded = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Equal") },
+                            onClick = {
+                                splitMethod = SplitMethod.EQUAL
+                                splitExpanded = false
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("By Item") },
+                            onClick = {
+                                splitMethod = SplitMethod.BY_ITEM
+                                splitExpanded = false
+                            }
+                        )
+                    }
+                }
+                Spacer(Modifier.height(16.dp))
+            }
+
+            // Equal split: total price
+            if (splitMethod == SplitMethod.EQUAL) {
+                item {
+                    OutlinedTextField(
+                        value = totalPrice,
+                        onValueChange = { totalPrice = it },
+                        label = { Text("Total Price ($selectedCurrency)") },
+                        modifier = Modifier.fillMaxWidth()
                     )
+                    Spacer(Modifier.height(24.dp))
                 }
             }
-        }) {
-            Text("Save Bill")
+
+            // By item split
+            if (splitMethod == SplitMethod.BY_ITEM) {
+                item {
+                    Text("Add Bill Items")
+                    Spacer(Modifier.height(8.dp))
+                }
+
+                item {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        OutlinedTextField(
+                            value = newItemName,
+                            onValueChange = { newItemName = it },
+                            label = { Text("Item Name") },
+                            modifier = Modifier.weight(1f)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        OutlinedTextField(
+                            value = newItemPrice,
+                            onValueChange = { newItemPrice = it },
+                            label = { Text("Price") },
+                            modifier = Modifier.width(100.dp)
+                        )
+                    }
+                    Spacer(Modifier.height(8.dp))
+                }
+
+                item {
+                    var memberDropdownExpanded by remember { mutableStateOf(false) }
+                    var selectedUserName by remember { mutableStateOf("Assign to...") }
+                    var selectedUserId by remember { mutableStateOf<String?>(null) }
+
+                    Box {
+                        OutlinedButton(onClick = { memberDropdownExpanded = true }) {
+                            Text(selectedUserName)
+                        }
+                        DropdownMenu(
+                            expanded = memberDropdownExpanded,
+                            onDismissRequest = { memberDropdownExpanded = false }
+                        ) {
+                            members.forEach { (uid, name) ->
+                                DropdownMenuItem(
+                                    text = { Text(name) },
+                                    onClick = {
+                                        selectedUserId = uid
+                                        selectedUserName = name
+                                        memberDropdownExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    Button(onClick = {
+                        val price = newItemPrice.toDoubleOrNull()
+                        if (newItemName.isNotBlank() &&
+                            price != null &&
+                            selectedUserId != null
+                        ) {
+                            val item = Item(newItemName, price)
+                            billItems.add(item)
+                            itemAssignments[item.itemId] = selectedUserId!!
+
+                            newItemName = ""
+                            newItemPrice = ""
+                            selectedUserId = null
+                            selectedUserName = "Assign to..."
+                        }
+                    }) {
+                        Text("Add Item")
+                    }
+                    Spacer(Modifier.height(16.dp))
+                }
+
+                items(billItems) { item ->
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("${item.itemName} — ${item.itemPrice} $selectedCurrency")
+                        Text(
+                            members.find { it.first == itemAssignments[item.itemId] }?.second
+                                ?: "Unassigned"
+                        )
+                    }
+                }
+                item { Spacer(Modifier.height(24.dp)) }
+            }
+
+            // Save Bill button + progress messages
+            item {
+                Button(onClick = {
+                    val finalItems =
+                        if (splitMethod == SplitMethod.EQUAL) {
+                            val total = totalPrice.toDoubleOrNull() ?: 0.0
+                            listOf(Item("Total", total))
+                        } else billItems
+
+                    if (imageUri == null) {
+                        viewModel.uploadBill(
+                            groupId, billTitle, finalItems, itemAssignments, splitMethod
+                        ) {
+                            viewModel.updateBalance(
+                                groupId, finalItems, itemAssignments, splitMethod
+                            )
+                        }
+                    } else {
+                        viewModel.uploadBillImage(
+                            groupId,
+                            context.contentResolver,
+                            imageUri!!,
+                            billTitle,
+                            finalItems,
+                            itemAssignments,
+                            splitMethod
+                        ) {
+                            viewModel.updateBalance(
+                                groupId, finalItems, itemAssignments, splitMethod
+                            )
+                        }
+                    }
+                }, modifier = Modifier.fillMaxWidth()) {
+                    Text("Save Bill")
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                when (val state = viewModel.billUploadUiState) {
+                    is BillUploadUiState.LoadingBillUpload,
+                    is BillUploadUiState.LoadingImageUpload ->
+                        CircularProgressIndicator()
+                    is BillUploadUiState.BillUploadSuccess,
+                    is BillUploadUiState.ImageUploadSuccess ->
+                        Text("Bill uploaded successfully!")
+                    is BillUploadUiState.ErrorDuringBillUpload ->
+                        Text("Error: ${state.error}")
+                    is BillUploadUiState.ErrorDuringImageUpload ->
+                        Text("Image error: ${state.error}")
+                    else -> {}
+                }
+            }
         }
     }
 }
+
+
 
 
 
