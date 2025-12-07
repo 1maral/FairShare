@@ -4,6 +4,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import hu.ait.maral.fairshare.data.Group
 import hu.ait.maral.fairshare.data.User
 
@@ -11,7 +12,6 @@ class RoomViewModel : ViewModel() {
 
     var group = mutableStateOf<Group?>(null)
         private set
-
 
     var preferredCurrency = mutableStateOf("EUR")
         private set
@@ -22,34 +22,51 @@ class RoomViewModel : ViewModel() {
     var errorMessage = mutableStateOf<String?>(null)
         private set
 
+    // Map<memberId, amountUserOwesThemInEur>
+    var owedPerPerson = mutableStateOf<Map<String, Double>>(emptyMap())
+        private set
+
     private val db = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
 
+    private var groupListener: ListenerRegistration? = null
 
-    fun loadGroup(groupId: String) {
+    val currentUserId: String?
+        get() = auth.currentUser?.uid
+
+    /**
+     * Observe group document in real-time.
+     */
+    fun observeGroup(groupId: String) {
         if (groupId.isBlank()) {
             errorMessage.value = "Invalid group id."
             return
         }
 
+        // Remove previous listener if any
+        groupListener?.remove()
+
         isLoading.value = true
         errorMessage.value = null
 
-        db.collection("groups")
+        groupListener = db.collection("groups")
             .document(groupId)
-            .get()
-            .addOnSuccessListener { doc ->
-                if (doc.exists()) {
+            .addSnapshotListener { doc, e ->
+                if (e != null) {
+                    errorMessage.value = e.localizedMessage
+                    isLoading.value = false
+                    return@addSnapshotListener
+                }
+
+                if (doc != null && doc.exists()) {
                     val loadedGroup = doc.toObject(Group::class.java)?.copy(groupId = doc.id)
                     group.value = loadedGroup
+                    recomputeOwedPerPerson()
+                    isLoading.value = false
                 } else {
                     errorMessage.value = "Group not found."
+                    isLoading.value = false
                 }
-                isLoading.value = false
-            }
-            .addOnFailureListener { e ->
-                errorMessage.value = e.localizedMessage
-                isLoading.value = false
             }
     }
 
@@ -65,5 +82,55 @@ class RoomViewModel : ViewModel() {
             }
     }
 
+    private fun recomputeOwedPerPerson() {
+        val g = group.value ?: return
+        val uid = currentUserId ?: return
+        owedPerPerson.value = computeOwedPerPerson(g.balances, uid)
+    }
 
+    /**
+     * Given group-level net balances (in EUR) and the current user,
+     * compute how much the user owes each other member.
+     *
+     * balances: Map<memberId, netBalanceInEur>
+     *   > 0  -> group owes this member
+     *   < 0  -> this member owes the group
+     */
+    private fun computeOwedPerPerson(
+        balances: Map<String, Double>,
+        currentUserId: String
+    ): Map<String, Double> {
+        val userBalance = balances[currentUserId] ?: 0.0
+
+        // If the user isn't a debtor, they don't owe anyone.
+        if (userBalance >= 0.0) return emptyMap()
+
+        var remainingDebt = -userBalance  // positive amount user must pay
+        val result = mutableMapOf<String, Double>()
+
+        // Collect all creditors (people the group owes)
+        val creditors = balances
+            .filter { (memberId, balance) ->
+                memberId != currentUserId && balance > 0.0
+            }
+            .toList()
+
+        // Greedy: pay creditors in order until your debt is exhausted
+        for ((creditorId, creditorBalance) in creditors) {
+            if (remainingDebt <= 0.0) break
+
+            val pay = minOf(remainingDebt, creditorBalance)
+            if (pay > 0.0) {
+                result[creditorId] = pay
+                remainingDebt -= pay
+            }
+        }
+
+        return result
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        groupListener?.remove()
+    }
 }

@@ -37,13 +37,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil.compose.AsyncImage
-import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.isGranted
-import com.google.accompanist.permissions.rememberPermissionState
-import com.google.accompanist.permissions.shouldShowRationale
 import hu.ait.maral.fairshare.data.Item
 import hu.ait.maral.fairshare.data.SplitMethod
+
 @RequiresApi(Build.VERSION_CODES.P)
 @Composable
 fun BillScreen(
@@ -52,27 +48,26 @@ fun BillScreen(
 ) {
     val context = LocalContext.current
 
-    // Local states
     var billTitle by remember { mutableStateOf("") }
     var newItemName by remember { mutableStateOf("") }
     var newItemPrice by remember { mutableStateOf("") }
 
     val billItems = remember { mutableStateListOf<Item>() }
     val itemAssignments = remember { mutableStateMapOf<String, String>() }
+
     var splitMethod by remember { mutableStateOf(SplitMethod.EQUAL) }
 
     // Members (uid -> name)
-    val members = remember { mutableStateListOf<Pair<String, String>>() } // (uid, name)
+    val members = remember { mutableStateListOf<Pair<String, String>>() }
 
-    // Load members for dropdown
     LaunchedEffect(groupId) {
         viewModel.loadMembersForGroup(groupId) { list ->
             members.clear()
-            members.addAll(list)   // each item: Pair(uid, displayName)
+            members.addAll(list)
         }
     }
 
-    // Camera image state
+    // Camera image state (if you hook this up later)
     var hasImage by remember { mutableStateOf(false) }
     var imageUri by remember { mutableStateOf<Uri?>(null) }
 
@@ -178,7 +173,7 @@ fun BillScreen(
 
         Spacer(Modifier.height(24.dp))
 
-// ---- Split Method Dropdown ----
+        // ---- Split Method Dropdown ----
         var splitExpanded by remember { mutableStateOf(false) }
 
         Box {
@@ -222,13 +217,14 @@ fun BillScreen(
                     itemAssignments = itemAssignments,
                     splitMethod = splitMethod
                 ) {
-                    // After upload completes → update balances
                     viewModel.updateBalance(
                         groupId = groupId,
                         billItems = billItems,
                         itemAssignments = itemAssignments,
                         splitMethod = splitMethod
-                    )
+                    ) { success, error ->
+                        println("updateBalance result: success=$success, error=$error")
+                    }
                 }
             } else {
                 viewModel.uploadBillImage(
@@ -240,13 +236,14 @@ fun BillScreen(
                     itemAssignments = itemAssignments,
                     splitMethod = splitMethod
                 ) {
-                    // After upload completes → update balances
                     viewModel.updateBalance(
                         groupId = groupId,
                         billItems = billItems,
                         itemAssignments = itemAssignments,
                         splitMethod = splitMethod
-                    )
+                    ) { success, error ->
+                        println("updateBalance result (with image): success=$success, error=$error")
+                    }
                 }
             }
         }) {
@@ -254,6 +251,3 @@ fun BillScreen(
         }
     }
 }
-
-
-

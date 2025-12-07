@@ -27,7 +27,7 @@ fun RoomScreen(
     onAddBillClick: () -> Unit
 ) {
     LaunchedEffect(groupId) {
-        viewModel.loadGroup(groupId)
+        viewModel.observeGroup(groupId)
         viewModel.loadUserPreferredCurrency()
     }
 
@@ -37,6 +37,9 @@ fun RoomScreen(
 
     val preferredCurrency = viewModel.preferredCurrency.value
     val fxRates = ratesViewModel.fxRates.value
+
+    val currentUserId = viewModel.currentUserId
+    val owedPerPerson = viewModel.owedPerPerson.value
 
     Scaffold(
         containerColor = BackgroundPink,
@@ -88,7 +91,7 @@ fun RoomScreen(
                         modifier = Modifier.align(Alignment.Center)
                     )
                 }
-                groupState == null -> {
+                groupState == null || currentUserId == null -> {
                     Text(
                         text = "No group data.",
                         modifier = Modifier.align(Alignment.Center)
@@ -99,7 +102,7 @@ fun RoomScreen(
                         modifier = Modifier.fillMaxSize()
                     ) {
                         Text(
-                            text = "Members:",
+                            text = "What you owe to others in this group:",
                             style = MaterialTheme.typography.titleMedium
                         )
 
@@ -110,14 +113,15 @@ fun RoomScreen(
 
                                 val memberId = groupState.memberIds.getOrNull(index)
 
-                                // amounts in EUR stored in Firestore
-                                val balanceEur = memberId?.let { id ->
-                                    groupState.balances[id]
-                                } ?: 0.0
+                                // Skip self or null ids
+                                if (memberId == null || memberId == currentUserId) {
+                                    return@itemsIndexed
+                                }
 
-                                // ✅ convert using same logic as HomeScreen
-                                val balanceConverted = convertAmount(
-                                    amountEur = balanceEur,
+                                val owedEur = owedPerPerson[memberId] ?: 0.0
+
+                                val owedConverted = convertAmount(
+                                    amountEur = owedEur,
                                     userCurrency = preferredCurrency,
                                     fxRates = fxRates
                                 )
@@ -125,13 +129,26 @@ fun RoomScreen(
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(vertical = 4.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween
+                                        .padding(vertical = 6.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(text = memberName)
-                                    Text(
-                                        text = "${preferredCurrency} ${formatAmount(balanceConverted)}"
-                                    )
+
+                                    if (owedEur > 0.0) {
+                                        Text(
+                                            text = "You owe $preferredCurrency ${
+                                                formatAmount(
+                                                    owedConverted
+                                                )
+                                            }"
+                                        )
+                                    } else {
+                                        Text(
+                                            text = "Settled",
+                                            color = Color.Gray
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -143,7 +160,7 @@ fun RoomScreen(
 }
 
 /**
- * Same helper as in HomeScreen
+ * Convert amount from EUR to the user's preferred currency using FxRates.
  */
 private fun convertAmount(
     amountEur: Double,
@@ -155,6 +172,9 @@ private fun convertAmount(
     return amountEur * rate
 }
 
+/**
+ * Format amounts nicely (2 decimal places).
+ */
 private fun formatAmount(amount: Double): String {
     return String.format("%.2f", amount)
 }

@@ -51,7 +51,7 @@ class BillViewModel : ViewModel() {
     private val auth: FirebaseAuth = Firebase.auth
 
     /**
-     * Uploads a bill without an image
+     * Uploads a bill without an image.
      */
     fun uploadBill(
         groupId: String,
@@ -89,7 +89,7 @@ class BillViewModel : ViewModel() {
     }
 
     /**
-     * Uploads a bill image to Supabase, then creates the bill
+     * Uploads a bill image to Supabase, then creates the bill.
      */
     @RequiresApi(Build.VERSION_CODES.P)
     fun uploadBillImage(
@@ -107,7 +107,6 @@ class BillViewModel : ViewModel() {
             try {
                 billUploadUiState = BillUploadUiState.LoadingImageUpload
 
-                // Decode image
                 val source = ImageDecoder.createSource(contentResolver, imageUri)
                 val bitmap = ImageDecoder.decodeBitmap(source)
 
@@ -115,7 +114,6 @@ class BillViewModel : ViewModel() {
                 bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos)
                 val imageInBytes = baos.toByteArray()
 
-                // Upload image to Supabase
                 val bucket = supabase.storage.from("bills")
                 val fileName = "uploads/${System.currentTimeMillis()}.jpg"
                 bucket.upload(fileName, imageInBytes)
@@ -123,7 +121,6 @@ class BillViewModel : ViewModel() {
 
                 billUploadUiState = BillUploadUiState.ImageUploadSuccess
 
-                // Now upload the bill itself with the image URL
                 uploadBill(
                     groupId = groupId,
                     title = title,
@@ -156,14 +153,12 @@ class BillViewModel : ViewModel() {
                 val usersCollection = db.collection("users")
                 val resultList = mutableListOf<Pair<String, String>>()
 
-                // Fetch display name for each member UID
                 memberIds.forEach { uid ->
                     usersCollection.document(uid).get()
                         .addOnSuccessListener { userDoc ->
                             val name = userDoc.getString("name") ?: "Unknown"
                             resultList.add(uid to name)
 
-                            // When all users are loaded, return
                             if (resultList.size == memberIds.size) {
                                 onResult(resultList)
                             }
@@ -183,16 +178,18 @@ class BillViewModel : ViewModel() {
 
     /**
      * Updates group balances in Firestore after a bill is uploaded.
-     * Assumes "memberIds" is a List<String> and "balances" is a Map<String, Double>.
+     * "balances" is stored as Map<String, Double> in EUR.
      */
     fun updateBalance(
         groupId: String,
         billItems: List<Item>,
         itemAssignments: Map<String, String>,
-        splitMethod: SplitMethod
+        splitMethod: SplitMethod,
+        onComplete: (Boolean, String?) -> Unit
     ) {
         val db = FirebaseFirestore.getInstance()
         val groupRef = db.collection("groups").document(groupId)
+        val authorId = auth.currentUser?.uid ?: ""
 
         db.runTransaction { tx ->
             val groupSnap = tx.get(groupRef)
@@ -201,18 +198,15 @@ class BillViewModel : ViewModel() {
             val existingBalances =
                 groupSnap.get("balances") as? Map<String, Double> ?: mapOf()
 
-            // Start with the existing balances
             val newBalances = existingBalances.toMutableMap()
             members.forEach { uid ->
-                if (!newBalances.containsKey(uid)) {
-                    newBalances[uid] = 0.0
-                }
+                if (!newBalances.containsKey(uid)) newBalances[uid] = 0.0
             }
 
+            val total = billItems.sumOf { it.itemPrice }
+
             when (splitMethod) {
-                // Everyone pays equal portion of total bill
                 SplitMethod.EQUAL -> {
-                    val total = billItems.sumOf { it.itemPrice }
                     if (members.isNotEmpty()) {
                         val perPerson = total / members.size
                         members.forEach { uid ->
@@ -221,7 +215,6 @@ class BillViewModel : ViewModel() {
                     }
                 }
 
-                // Each item belongs to one user → add entire item price to that user
                 SplitMethod.BY_ITEM -> {
                     billItems.forEach { item ->
                         val assignedUid = itemAssignments[item.itemId] ?: return@forEach
@@ -231,15 +224,22 @@ class BillViewModel : ViewModel() {
                 }
             }
 
-            // Write back updated balances (Map<String, Double>)
+            // The author fronted the whole bill → negative balance
+            newBalances[authorId] = (newBalances[authorId] ?: 0.0) - total
+
             tx.update(groupRef, "balances", newBalances as Map<String, Double>)
         }
+            .addOnSuccessListener {
+                onComplete(true, null)
+            }
+            .addOnFailureListener { e ->
+                onComplete(false, e.message)
+            }
     }
 }
 
 /**
  * Separate FileProvider used for image Uris (camera/gallery).
- * This stays as its own class, not part of the ViewModel.
  */
 class ComposeFileProvider : FileProvider(
     hu.ait.maral.fairshare.R.xml.filepaths
