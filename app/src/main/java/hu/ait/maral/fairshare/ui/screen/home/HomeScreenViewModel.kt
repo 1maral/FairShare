@@ -88,7 +88,6 @@ class HomeScreenViewModel : ViewModel() {
                     return@addOnSuccessListener
                 }
 
-                // Validate emails
                 val emailToUid = mutableMapOf<String, String>()
                 val invalid = mutableListOf<String>()
                 var processed = 0

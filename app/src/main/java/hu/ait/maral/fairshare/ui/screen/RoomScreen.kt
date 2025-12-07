@@ -11,7 +11,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import hu.ait.maral.fairshare.data.FxRates
+import hu.ait.maral.fairshare.ui.screen.rate.RatesViewModel
 import hu.ait.maral.fairshare.ui.theme.BackgroundPink
 import hu.ait.maral.fairshare.ui.theme.ButtonGreen
 
@@ -20,15 +23,20 @@ import hu.ait.maral.fairshare.ui.theme.ButtonGreen
 fun RoomScreen(
     groupId: String,
     viewModel: RoomViewModel = viewModel(),
+    ratesViewModel: RatesViewModel = hiltViewModel(),
     onAddBillClick: () -> Unit
 ) {
     LaunchedEffect(groupId) {
         viewModel.loadGroup(groupId)
+        viewModel.loadUserPreferredCurrency()
     }
 
     val groupState = viewModel.group.value
     val isLoading = viewModel.isLoading.value
     val errorMessage = viewModel.errorMessage.value
+
+    val preferredCurrency = viewModel.preferredCurrency.value
+    val fxRates = ratesViewModel.fxRates.value
 
     Scaffold(
         containerColor = BackgroundPink,
@@ -100,11 +108,19 @@ fun RoomScreen(
                         LazyColumn {
                             itemsIndexed(groupState.members) { index, memberName ->
 
-                                // ✅ FIXED: balance lookup by userId
                                 val memberId = groupState.memberIds.getOrNull(index)
-                                val balance = memberId?.let { id ->
+
+                                // amounts in EUR stored in Firestore
+                                val balanceEur = memberId?.let { id ->
                                     groupState.balances[id]
                                 } ?: 0.0
+
+                                // ✅ convert using same logic as HomeScreen
+                                val balanceConverted = convertAmount(
+                                    amountEur = balanceEur,
+                                    userCurrency = preferredCurrency,
+                                    fxRates = fxRates
+                                )
 
                                 Row(
                                     modifier = Modifier
@@ -113,7 +129,9 @@ fun RoomScreen(
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
                                     Text(text = memberName)
-                                    Text(text = "$${"%.2f".format(balance)}")
+                                    Text(
+                                        text = "${preferredCurrency} ${formatAmount(balanceConverted)}"
+                                    )
                                 }
                             }
                         }
@@ -122,4 +140,21 @@ fun RoomScreen(
             }
         }
     }
+}
+
+/**
+ * Same helper as in HomeScreen
+ */
+private fun convertAmount(
+    amountEur: Double,
+    userCurrency: String,
+    fxRates: FxRates?
+): Double {
+    if (fxRates == null) return amountEur
+    val rate = fxRates.rates[userCurrency] ?: 1.0
+    return amountEur * rate
+}
+
+private fun formatAmount(amount: Double): String {
+    return String.format("%.2f", amount)
 }
