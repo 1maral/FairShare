@@ -370,9 +370,10 @@ fun BillScreen(
                     is BillUploadUiState.LoadingBillUpload,
                     is BillUploadUiState.LoadingImageUpload ->
                         CircularProgressIndicator()
-                    is BillUploadUiState.BillUploadSuccess,
-                    is BillUploadUiState.ImageUploadSuccess ->
+                    is BillUploadUiState.BillUploadSuccess ->
                         onUploadSuccess()
+                    is BillUploadUiState.ImageUploadSuccess ->
+                        Text("Image upload successful")
                     is BillUploadUiState.ErrorDuringBillUpload ->
                         Text("Error: ${state.error}")
                     is BillUploadUiState.ErrorDuringImageUpload ->
