@@ -133,4 +133,15 @@ class RoomViewModel : ViewModel() {
         super.onCleared()
         groupListener?.remove()
     }
+
+    fun fetchUserAvatar(uid: String, callback: (String?) -> Unit) {
+        db.collection("users").document(uid).get()
+            .addOnSuccessListener { snap ->
+                val url = snap.getString("profilePictureUrl")
+                callback(url)
+            }
+            .addOnFailureListener {
+                callback(null)
+            }
+    }
 }
