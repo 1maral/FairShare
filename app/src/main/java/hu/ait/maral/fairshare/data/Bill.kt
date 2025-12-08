@@ -8,8 +8,9 @@ data class Bill(
     var groupId: String = "",
     var authorId: String = "",
     var billTitle: String = "",
-    var billDate: Date,
+    var billDate: Date = Date(),
     var billItems: List<Item> = listOf(),
+    // Map<itemId, memberId>
     var itemAssignments: Map<String, String> = emptyMap<String, String>(),
     var splitMethod: SplitMethod = SplitMethod.BY_ITEM,
     var imgUrl: String = ""

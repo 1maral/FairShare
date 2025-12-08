@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
+import hu.ait.maral.fairshare.data.Bill
 import hu.ait.maral.fairshare.data.Group
 import hu.ait.maral.fairshare.data.User
 
@@ -30,6 +31,12 @@ class RoomViewModel : ViewModel() {
     private val auth = FirebaseAuth.getInstance()
 
     private var groupListener: ListenerRegistration? = null
+
+    var bills = mutableStateOf<List<Bill>>(emptyList())
+        private set
+
+    private var billsListener: ListenerRegistration? = null
+
 
     val currentUserId: String?
         get() = auth.currentUser?.uid
@@ -129,8 +136,47 @@ class RoomViewModel : ViewModel() {
         return result
     }
 
+    fun getBills(groupId: String): List<Bill> {
+        if (groupId.isBlank()) {
+            errorMessage.value = "Invalid group ID for bills."
+            return emptyList()
+        }
+
+        // Remove previous listener
+        billsListener?.remove()
+
+        isLoading.value = true
+        errorMessage.value = null
+
+        billsListener = db.collection("bills")
+            .whereEqualTo("groupId", groupId)
+            .addSnapshotListener { snapshot, e ->
+                if (e != null) {
+                    errorMessage.value = "Error loading bills: ${e.message}"
+                    isLoading.value = false
+                    return@addSnapshotListener
+                }
+
+                if (snapshot != null) {
+                    val list = snapshot.documents.mapNotNull { doc ->
+                        val bill = doc.toObject(Bill::class.java)
+                        bill?.copy(billId = doc.id)
+                    }
+
+                    // Sort newest → oldest by billDate
+                    bills.value = list.sortedByDescending { it.billDate }
+                }
+
+                isLoading.value = false
+            }
+
+        return bills.value
+    }
+
     override fun onCleared() {
         super.onCleared()
         groupListener?.remove()
+        billsListener?.remove()
     }
+
 }
