@@ -189,4 +189,37 @@ class RoomViewModel : ViewModel() {
                 isLoading.value = false
             }
     }
+
+
+    fun settleDebtWithMember(
+        groupId: String,
+        creditorId: String,
+        amountPaid: Double,
+        onSuccess: () -> Unit = {},
+        onError: (String) -> Unit = {}
+    ) {
+        val g = group.value ?: return onError("Group not loaded")
+        val uid = currentUserId
+
+        val balances = g.balances.toMutableMap()
+
+        val userBalance = balances[uid] ?: 0.0
+        val creditorBalance = balances[creditorId] ?: 0.0
+
+        // User owes money → userBalance < 0
+        // Creditor is owed money → creditorBalance > 0
+
+        val newUserBalance = userBalance + amountPaid
+        val newCreditorBalance = creditorBalance - amountPaid
+
+        balances[uid] = newUserBalance
+        balances[creditorId] = newCreditorBalance
+
+        FirebaseFirestore.getInstance()
+            .collection("groups")
+            .document(groupId)
+            .update("balances", balances)
+            .addOnSuccessListener { onSuccess() }
+            .addOnFailureListener { e -> onError(e.localizedMessage ?: "Unknown error") }
+    }
 }

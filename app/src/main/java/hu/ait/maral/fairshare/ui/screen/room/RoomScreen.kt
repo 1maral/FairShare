@@ -1,5 +1,6 @@
 package hu.ait.maral.fairshare.ui.screen.room
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -57,6 +58,14 @@ fun RoomScreen(
     val currentUserId = viewModel.currentUserId
     val owedPerPerson = viewModel.owedPerPerson.value
     val bills = viewModel.bills.value
+
+    var showPaymentDialog by remember { mutableStateOf(false) }
+    var selectedPersonId by remember { mutableStateOf<String?>(null) }
+    var selectedPersonName by remember { mutableStateOf<String?>(null) }
+
+    var selectedAmountOption by remember { mutableStateOf("owed") }
+    var customAmount by remember { mutableStateOf("") }
+    var selectedPaymentMethod by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
         containerColor = BackgroundPink,
@@ -172,12 +181,20 @@ fun RoomScreen(
                                     statusColor = Color.Gray
                                 }
 
-                                MemberBalanceCard(
-                                    name = memberName,
-                                    statusText = statusText,
-                                    statusColor = statusColor,
-                                    avatarUrl = avatarUrl
-                                )
+                                Box(
+                                    modifier = Modifier.clickable {
+                                        selectedPersonId = memberId
+                                        selectedPersonName = memberName
+                                        showPaymentDialog = true
+                                    }
+                                ) {
+                                    MemberBalanceCard(
+                                        name = memberName,
+                                        statusText = statusText,
+                                        statusColor = statusColor,
+                                        avatarUrl = avatarUrl
+                                    )
+                                }
                             }
                         }
 
@@ -217,6 +234,108 @@ fun RoomScreen(
                                 modifier = Modifier.padding(8.dp)
                             )
                         }
+                    }
+                    if (showPaymentDialog && selectedPersonId != null) {
+
+                        val owedEur = owedPerPerson[selectedPersonId] ?: 0.0
+                        val convertedOwed = convertAmount(owedEur, preferredCurrency, fxRates)
+
+                        AlertDialog(
+                            onDismissRequest = { showPaymentDialog = false },
+                            title = { Text("Settle with $selectedPersonName") },
+                            text = {
+                                Column {
+
+                                    // ----- Amount Selection -----
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        RadioButton(
+                                            selected = selectedAmountOption == "owed",
+                                            onClick = {
+                                                selectedAmountOption = "owed"
+                                                customAmount = formatAmount(convertedOwed)
+                                            }
+                                        )
+                                        Text("Owed: $preferredCurrency ${formatAmount(convertedOwed)}")
+                                    }
+
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        RadioButton(
+                                            selected = selectedAmountOption == "custom",
+                                            onClick = { selectedAmountOption = "custom" }
+                                        )
+                                        OutlinedTextField(
+                                            value = customAmount,
+                                            onValueChange = {
+                                                if (it.matches(Regex("^\\d*(\\.\\d{0,2})?$"))) {
+                                                    customAmount = it
+                                                }
+                                            },
+                                            label = { Text("Custom amount") },
+                                            singleLine = true,
+                                            modifier = Modifier.width(160.dp)
+                                        )
+                                    }
+
+                                    Spacer(Modifier.height(12.dp))
+
+                                    // ---- Payment Method ----
+                                    Text("Select Payment Method:")
+                                    val methods = listOf("Cash", "Revolut", "Bank", "Wise")
+
+                                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        items(methods.size) { i ->
+                                            val m = methods[i]
+                                            Card(
+                                                colors = if (selectedPaymentMethod == m)
+                                                    CardDefaults.cardColors(containerColor = ButtonGreen)
+                                                else CardDefaults.cardColors(containerColor = Color.LightGray),
+                                                modifier = Modifier
+                                                    .height(50.dp)
+                                                    .width(100.dp)
+                                                    .clickable { selectedPaymentMethod = m }
+                                            ) {
+                                                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                                    Text(m)
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+
+                            confirmButton = {
+                                Button(
+                                    onClick = {
+                                        val amountToPay = when (selectedAmountOption) {
+                                            "owed" -> convertedOwed
+                                            "custom" -> customAmount.toDoubleOrNull() ?: 0.0
+                                            else -> 0.0
+                                        }
+
+                                        //------------------------------------------------------------------
+                                        //   THIS IS WHERE YOU CALL settleDebtWithMember
+                                        //------------------------------------------------------------------
+
+                                        viewModel.settleDebtWithMember(
+                                            groupId = groupId,
+                                            creditorId = selectedPersonId!!,
+                                            amountPaid = amountToPay / (fxRates?.rates?.get(preferredCurrency) ?: 1.0),
+                                            // converted back to EUR
+                                            onSuccess = { showPaymentDialog = false },
+                                            onError = { viewModel.errorMessage.value = it }
+                                        )
+                                    }
+                                ) {
+                                    Text("Confirm Payment")
+                                }
+                            },
+
+                            dismissButton = {
+                                TextButton(onClick = { showPaymentDialog = false }) {
+                                    Text("Cancel")
+                                }
+                            }
+                        )
                     }
                 }
             }

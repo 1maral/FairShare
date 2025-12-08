@@ -91,7 +91,6 @@ fun BillScreen(
     var newItemName by remember { mutableStateOf("") }
     var newItemPrice by remember { mutableStateOf("") }
 
-    //val billItems = remember { mutableStateListOf<Item>() }
     val itemAssignments = remember { mutableStateMapOf<String, String>() }
     var splitMethod by remember { mutableStateOf(SplitMethod.EQUAL) }
 
@@ -350,7 +349,6 @@ fun BillScreen(
                                     Text("Delete")
                                 }
                             }
-
                         }
                     }
 
@@ -449,16 +447,6 @@ fun BillScreen(
             // Save Bill button + progress messages
             item {
                 Button(onClick = {
-//                    val finalItems =
-//                        if (splitMethod == SplitMethod.EQUAL) {
-//                            val total = totalPrice.toDoubleOrNull() ?: 0.0
-//                            listOf(Item("Total", total))
-//                        } else {
-//                            if (aiUiState is AiBillUiState.AIResultReady)
-//                                editableAiItems   // <- AI items
-//                            else
-//                                billItems         // <- fallback if no AI
-//                        }
                     val finalItems =
                         if (splitMethod == SplitMethod.EQUAL) {
                             val total = totalPrice.toDoubleOrNull() ?: 0.0
