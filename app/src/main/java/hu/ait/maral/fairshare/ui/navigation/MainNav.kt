@@ -11,20 +11,19 @@ data object LoginScreenKey: NavKey
 data class SignUpScreenKey(val email: String, val password: String): NavKey
 
 @Serializable
-data object HomeScreenKey : NavKey
+data object HomeScreenKey: NavKey
 
 @Serializable
-data object NotificationScreenKey : NavKey
+data object NotificationScreenKey: NavKey
 
 @Serializable
-data object SplashScreenKey : NavKey
+data object SplashScreenKey: NavKey
 
 @Serializable
 data class RoomScreenKey(val groupId: String): NavKey
 
 @Serializable
 data object ProfileScreenKey: NavKey
-
 
 @Serializable
 data class BillScreenKey(val groupId: String): NavKey

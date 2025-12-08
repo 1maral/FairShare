@@ -96,7 +96,6 @@ fun NavGraph(modifier: Modifier) {
             }
 
             entry<HomeScreenKey> {
-
                 HomeScreen(onNotificationsClick = {
                     backStack.add(NotificationScreenKey)
                 }, onRoomClick = { groupId ->
@@ -113,8 +112,8 @@ fun NavGraph(modifier: Modifier) {
                     onAddBillClick = { backStack.add(BillScreenKey(key.groupId)) })
             }
 
-            entry<ProfileScreenKey> { key -> ProfileScreen(onSaveClick = {backStack.add(
-                HomeScreenKey)})}
+            entry<ProfileScreenKey> { key ->
+                ProfileScreen(onSaveClick = {backStack.add(HomeScreenKey)})}
 
 
             entry<BillScreenKey> { key ->

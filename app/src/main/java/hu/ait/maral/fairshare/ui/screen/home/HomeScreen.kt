@@ -36,9 +36,9 @@ import kotlin.math.min
 data class GroupUi(
     val groupId: String,
     val name: String,
-    val memberNames: List<String>,          // confirmed member names (no pending)
-    val memberBalances: List<Double>,       // already converted to user's currency
-    val memberAvatarUrls: List<String?>     // avatar URLs aligned with memberNames
+    val memberNames: List<String>,
+    val memberBalances: List<Double>,
+    val memberAvatarUrls: List<String?>
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -61,15 +61,15 @@ fun HomeScreen(
     var groupName by remember { mutableStateOf("") }
     var memberEmails by remember { mutableStateOf(listOf("")) }
 
-    // state for adding members to an existing group
+
     var isAddMembersDialogOpen by remember { mutableStateOf(false) }
     var selectedGroupId by remember { mutableStateOf<String?>(null) }
     var addMemberEmails by remember { mutableStateOf(listOf("")) }
 
-    // ⭐ Snackbar host state
+
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Show snackbar whenever errorMessage becomes non-null
+
     LaunchedEffect(errorMessage) {
         errorMessage?.let { msg ->
             snackbarHostState.showSnackbar(
@@ -146,8 +146,6 @@ fun HomeScreen(
                     }
                 }
 
-                // 👇 no more `errorMessage != null` branch that overwrote content
-
                 groups.isEmpty() -> {
                     Text(
                         "You are not in any groups yet.",
@@ -164,18 +162,18 @@ fun HomeScreen(
                             val memberNames = mutableListOf<String>()
                             val memberBalances = mutableListOf<Double>()
 
-                            val memberIds = group.memberIds   // confirmed member IDs
-                            val namesList = group.members      // parallel list of names
-                            val balanceMap = group.balances    // Map<memberId, Double> in EUR
+                            val memberIds = group.memberIds
+                            val namesList = group.members
+                            val balanceMap = group.balances
 
-                            // state list for avatar URLs, aligned with memberIds
+
                             val avatarUrls = remember(group.groupId, memberIds.size) {
                                 mutableStateListOf<String?>().apply {
                                     repeat(memberIds.size) { add(null) }
                                 }
                             }
 
-                            // Build aligned names + balances
+
                             for (i in memberIds.indices) {
                                 val memberId = memberIds[i]
                                 val name = namesList.getOrNull(i) ?: "Member"
@@ -190,7 +188,7 @@ fun HomeScreen(
                                 memberBalances.add(balanceConverted)
                             }
 
-                            // Load avatars once per group
+
                             LaunchedEffect(group.groupId) {
                                 memberIds.forEachIndexed { index, memberId ->
                                     viewModel.fetchUserAvatar(memberId) { url ->
@@ -224,7 +222,7 @@ fun HomeScreen(
             }
         }
 
-        // Create new group dialog
+
         if (isAddGroupDialogOpen) {
             AlertDialog(
                 onDismissRequest = { isAddGroupDialogOpen = false },
@@ -302,7 +300,7 @@ fun HomeScreen(
             )
         }
 
-        // Add members to existing group dialog
+
         if (isAddMembersDialogOpen && selectedGroupId != null) {
             AlertDialog(
                 onDismissRequest = {

@@ -21,6 +21,6 @@ data class Item(
     val itemId: String = UUID.randomUUID().toString(),
 )
 enum class SplitMethod {
-    EQUAL,        // split equally among users
-    BY_ITEM,      // each user pays for specific items
+    EQUAL,
+    BY_ITEM,
 }
