@@ -1,5 +1,8 @@
-package hu.ait.maral.fairshare.ui.screen
+package hu.ait.maral.fairshare.ui.screen.start
 
+import hu.ait.maral.fairshare.ui.screen.BillUploadUiState
+import hu.ait.maral.fairshare.ui.screen.BillViewModel
+import hu.ait.maral.fairshare.ui.screen.ComposeFileProvider
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
@@ -517,3 +520,218 @@ fun BillScreen(
 
 
 
+
+
+
+//
+//import android.graphics.Bitmap
+//import android.graphics.BitmapFactory
+//import android.os.Build
+//import androidx.activity.compose.rememberLauncherForActivityResult
+//import androidx.activity.result.contract.ActivityResultContracts
+//import androidx.annotation.RequiresApi
+//import androidx.compose.foundation.Image
+//import androidx.compose.foundation.layout.*
+//import androidx.compose.foundation.lazy.LazyColumn
+//import androidx.compose.foundation.lazy.itemsIndexed
+//import androidx.compose.material3.*
+//import androidx.compose.runtime.*
+//import androidx.compose.ui.Alignment
+//import androidx.compose.ui.Modifier
+//import androidx.compose.ui.graphics.asImageBitmap
+//import androidx.compose.ui.platform.LocalContext
+//import androidx.compose.ui.unit.dp
+//import androidx.lifecycle.viewmodel.compose.viewModel
+//import hu.ait.maral.fairshare.data.SplitMethod
+//import java.util.Date
+//
+//@RequiresApi(Build.VERSION_CODES.P)
+//@OptIn(ExperimentalMaterial3Api::class)
+//@Composable
+//fun AiBillReaderScreen(
+//    groupId: String = "test_group",
+//    onBack: () -> Unit = {},
+//    onUploadSuccess: () -> Unit = {}
+//) {
+//    val vm: AiBillReaderViewModel = viewModel()
+//
+//    val context = LocalContext.current // <-- capture context once here
+//
+//    var billTitle by remember { mutableStateOf("") }
+//    var billDate by remember { mutableStateOf(Date()) }
+//    var bitmap by remember { mutableStateOf<Bitmap?>(null) }
+//
+//    val aiItems by vm.aiItems.collectAsState()
+//    val uiState by vm.uiState.collectAsState()
+//
+//    // Editable copy of AI items
+//    var editableItems by remember { mutableStateOf(aiItems.toMutableList()) }
+//
+//    val cameraLauncher = rememberLauncherForActivityResult(
+//        contract = ActivityResultContracts.TakePicturePreview()
+//    ) { bmp -> bitmap = bmp }
+//
+//    // Update editable items whenever AI items change
+//    LaunchedEffect(aiItems) {
+//        editableItems = aiItems.toMutableList()
+//    }
+//
+//    // Upload success dialog
+//    if (uiState is hu.ait.maral.fairshare.ui.screen.start.AiBillUiState.UploadSuccess) {
+//        AlertDialog(
+//            onDismissRequest = { },
+//            confirmButton = {
+//                TextButton(onClick = onUploadSuccess) { Text("OK") }
+//            },
+//            title = { Text("Bill Uploaded") },
+//            text = { Text("Your bill has been uploaded with AI support.") }
+//        )
+//    }
+//
+//    Scaffold(
+//        topBar = {
+//            TopAppBar(
+//                title = { Text("AI Bill Reader") },
+//                navigationIcon = {
+//                    IconButton(onClick = onBack) { Text("Back") }
+//                }
+//            )
+//        }
+//    ) { padding ->
+//        Box(
+//            modifier = Modifier
+//                .fillMaxSize()
+//                .padding(padding)
+//        ) {
+//            LazyColumn(
+//                modifier = Modifier.fillMaxSize(),
+//                horizontalAlignment = Alignment.CenterHorizontally
+//            ) {
+//                item {
+//                    Spacer(Modifier.height(16.dp))
+//                    OutlinedTextField(
+//                        value = billTitle,
+//                        onValueChange = { billTitle = it },
+//                        label = { Text("Bill Title") },
+//                        modifier = Modifier.fillMaxWidth(0.9f)
+//                    )
+//
+//                    Spacer(Modifier.height(16.dp))
+//                    Button(onClick = {
+//                        //cameraLauncher.launch(null)
+//                        bitmap = BitmapFactory.decodeResource(context.resources, hu.ait.maral.fairshare.R.drawable.receite )
+//                    }) {
+//                        Text("Take Picture")
+//                    }
+//
+//                    bitmap?.let {
+//                        Spacer(Modifier.height(16.dp))
+//                        Image(
+//                            bitmap = it.asImageBitmap(),
+//                            contentDescription = null,
+//                            modifier = Modifier.size(220.dp)
+//                        )
+//                    }
+//
+//                    if (bitmap != null) {
+//                        val vm: AiBillReaderViewModel = viewModel()
+//                        Spacer(Modifier.height(16.dp))
+//                        Button(onClick = { vm.scanReceiptWithAI(bitmap!!) }) {
+//                            Text("Scan With AI")
+//                        }
+//                    }
+//
+//                    Spacer(Modifier.height(16.dp))
+//                    when (uiState) {
+//                        is hu.ait.maral.fairshare.ui.screen.start.AiBillUiState.LoadingAI,
+//                        is hu.ait.maral.fairshare.ui.screen.start.AiBillUiState.Uploading -> {
+//                            CircularProgressIndicator()
+//                        }
+//                        is hu.ait.maral.fairshare.ui.screen.start.AiBillUiState.AIError -> {
+//                            Text(
+//                                "AI Error: ${(uiState as hu.ait.maral.fairshare.ui.screen.start.AiBillUiState.AIError).message}",
+//                                color = MaterialTheme.colorScheme.error
+//                            )
+//                        }
+//                        is hu.ait.maral.fairshare.ui.screen.start.AiBillUiState.UploadError -> {
+//                            Text(
+//                                "Upload Error: ${(uiState as hu.ait.maral.fairshare.ui.screen.start.AiBillUiState.UploadError).message}",
+//                                color = MaterialTheme.colorScheme.error
+//                            )
+//                        }
+//                        else -> {}
+//                    }
+//
+//                    Spacer(Modifier.height(16.dp))
+//
+//                    if (uiState is hu.ait.maral.fairshare.ui.screen.start.AiBillUiState.AIResultReady) {
+//                        Text("AI Extracted Items:", style = MaterialTheme.typography.titleMedium)
+//                        Spacer(Modifier.height(8.dp))
+//                    }
+//
+//                    Spacer(Modifier.height(8.dp))
+//                }
+//
+//                // Editable AI items
+//                /////////////////////////////
+//                if (uiState is hu.ait.maral.fairshare.ui.screen.start.AiBillUiState.AIResultReady) {
+//                    itemsIndexed(editableItems) { index, item ->
+//                        Card(
+//                            modifier = Modifier
+//                                .fillMaxWidth()
+//                                .padding(8.dp)
+//                        ) {
+//                            Column(Modifier.padding(8.dp)) {
+//                                OutlinedTextField(
+//                                    value = item.itemName,
+//                                    onValueChange = { editableItems[index] = item.copy(itemName = it) },
+//                                    label = { Text("Item Name") }
+//                                )
+//                                OutlinedTextField(
+//                                    value = item.itemPrice.toString(),
+//                                    onValueChange = {
+//                                        val price = it.toDoubleOrNull() ?: 0.0
+//                                        editableItems[index] = item.copy(itemPrice = price)
+//                                    },
+//                                    label = { Text("Price (€)") }
+//                                )
+//                            }
+//                        }
+//                    }
+//
+//
+//
+//                }
+//
+//
+//
+//                item {
+//                    if (bitmap != null) {
+//                        Spacer(Modifier.height(16.dp))
+//                        Button(
+//                            enabled = uiState is hu.ait.maral.fairshare.ui.screen.start.AiBillUiState.AIResultReady,
+//                            onClick = {
+//                                vm.uploadAIBill(
+//                                    groupId = groupId,
+//                                    billTitle = billTitle,
+//                                    billDate = billDate,
+//                                    billItems = editableItems,
+//                                    bitmap = bitmap,
+//                                    splitMethod = SplitMethod.BY_ITEM,
+//                                    contentResolver = context.contentResolver, // <-- use captured context
+//                                    onSuccess = onUploadSuccess
+//                                )
+//                            }
+//                        ) {
+//                            if (uiState is hu.ait.maral.fairshare.ui.screen.start.AiBillUiState.Uploading) {
+//                                CircularProgressIndicator()
+//                            } else Text("Upload Bill")
+//                        }
+//
+//                        Spacer(Modifier.height(50.dp))
+//                    }
+//                }
+//            }
+//        }
+//    }
+//}

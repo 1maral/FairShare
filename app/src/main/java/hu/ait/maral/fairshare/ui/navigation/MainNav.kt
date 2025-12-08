@@ -28,3 +28,6 @@ data object ProfileScreenKey: NavKey
 
 @Serializable
 data class BillScreenKey(val groupId: String): NavKey
+
+@Serializable
+data object AiBillReaderScreenKey: NavKey
