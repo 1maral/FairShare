@@ -1,4 +1,4 @@
-package hu.ait.maral.fairshare.ui.screen
+package hu.ait.maral.fairshare.ui.screen.room
 
 import android.content.ContentResolver
 import android.content.Context
@@ -17,6 +17,7 @@ import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.FirebaseFirestore
+import hu.ait.maral.fairshare.R
 import hu.ait.maral.fairshare.data.Bill
 import hu.ait.maral.fairshare.data.Item
 import hu.ait.maral.fairshare.data.SplitMethod
@@ -248,7 +249,7 @@ class BillViewModel : ViewModel() {
  * Separate FileProvider used for image Uris (camera/gallery).
  */
 class ComposeFileProvider : FileProvider(
-    hu.ait.maral.fairshare.R.xml.filepaths
+    R.xml.filepaths
 ) {
     companion object {
         fun getImageUri(context: Context): Uri {
@@ -260,7 +261,7 @@ class ComposeFileProvider : FileProvider(
                 directory,
             )
             val authority = context.packageName + ".fileprovider"
-            return FileProvider.getUriForFile(
+            return getUriForFile(
                 context,
                 authority,
                 file,

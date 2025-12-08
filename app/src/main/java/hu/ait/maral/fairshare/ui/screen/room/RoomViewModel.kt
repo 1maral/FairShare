@@ -1,4 +1,4 @@
-package hu.ait.maral.fairshare.ui.screen
+package hu.ait.maral.fairshare.ui.screen.room
 
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
