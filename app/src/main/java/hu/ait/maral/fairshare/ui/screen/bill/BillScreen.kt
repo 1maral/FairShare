@@ -1,4 +1,4 @@
-package hu.ait.maral.fairshare.ui.screen.room
+package hu.ait.maral.fairshare.ui.screen.bill
 
 import android.graphics.BitmapFactory
 import android.Manifest
@@ -54,10 +54,11 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.shouldShowRationale
+import hu.ait.maral.fairshare.R
 import hu.ait.maral.fairshare.data.Item
 import hu.ait.maral.fairshare.data.SplitMethod
-import hu.ait.maral.fairshare.ui.screen.start.AiBillReaderViewModel
-import hu.ait.maral.fairshare.ui.screen.start.AiBillUiState
+import hu.ait.maral.fairshare.ui.screen.bill.ai.AiBillReaderViewModel
+import hu.ait.maral.fairshare.ui.screen.bill.ai.AiBillUiState
 
 @OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterial3Api::class)
 @RequiresApi(Build.VERSION_CODES.P)
@@ -122,7 +123,7 @@ fun BillScreen(
     val cameraPermissionState =
         rememberPermissionState(Manifest.permission.CAMERA)
     fun takePhoto() {
-        val uri = ComposeFileProvider.getImageUri(context)
+        val uri = ComposeFileProvider.Companion.getImageUri(context)
         imageUri = uri
         cameraLauncher.launch(uri)
     }
@@ -246,7 +247,7 @@ fun BillScreen(
                                         context.contentResolver.openInputStream(imageUri!!)
                                     )
                                     if (bitmap != null) {
-                                        bitmap = BitmapFactory.decodeResource(context.resources, hu.ait.maral.fairshare.R.drawable.receite )
+                                        bitmap = BitmapFactory.decodeResource(context.resources, R.drawable.receite )
                                         aiVm.scanReceiptWithAI(bitmap)
                                     }
                                 }

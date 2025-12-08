@@ -1,8 +1,9 @@
-package hu.ait.maral.fairshare.ui.screen.start
+package hu.ait.maral.fairshare.ui.screen.bill.ai
 
-import hu.ait.maral.fairshare.ui.screen.room.BillUploadUiState
-import hu.ait.maral.fairshare.ui.screen.room.BillViewModel
-import hu.ait.maral.fairshare.ui.screen.room.ComposeFileProvider
+import android.Manifest
+import hu.ait.maral.fairshare.ui.screen.bill.BillUploadUiState
+import hu.ait.maral.fairshare.ui.screen.bill.BillViewModel
+import hu.ait.maral.fairshare.ui.screen.bill.ComposeFileProvider
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
@@ -24,7 +25,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -57,10 +57,9 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.shouldShowRationale
+import hu.ait.maral.fairshare.R
 import hu.ait.maral.fairshare.data.Item
 import hu.ait.maral.fairshare.data.SplitMethod
-import hu.ait.maral.fairshare.ui.screen.start.AiBillReaderViewModel
-import hu.ait.maral.fairshare.ui.screen.start.AiBillUiState
 
 @OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterial3Api::class)
 @RequiresApi(Build.VERSION_CODES.P)
@@ -123,7 +122,7 @@ fun BillScreen(
         ActivityResultContracts.TakePicture()
     ) { success -> hasImage = success }
     val cameraPermissionState =
-        rememberPermissionState(android.Manifest.permission.CAMERA)
+        rememberPermissionState(Manifest.permission.CAMERA)
     fun takePhoto() {
         val uri = ComposeFileProvider.getImageUri(context)
         imageUri = uri
@@ -249,7 +248,7 @@ fun BillScreen(
                                         context.contentResolver.openInputStream(imageUri!!)
                                     )
                                     if (bitmap != null) {
-                                        bitmap = BitmapFactory.decodeResource(context.resources, hu.ait.maral.fairshare.R.drawable.receite )
+                                        bitmap = BitmapFactory.decodeResource(context.resources, R.drawable.receite )
                                         aiVm.scanReceiptWithAI(bitmap)
                                     }
                                 }
@@ -577,7 +576,7 @@ fun BillScreen(
 //    }
 //
 //    // Upload success dialog
-//    if (uiState is hu.ait.maral.fairshare.ui.screen.start.AiBillUiState.UploadSuccess) {
+//    if (uiState is hu.ait.maral.fairshare.ui.screen.bill.ai.AiBillUiState.UploadSuccess) {
 //        AlertDialog(
 //            onDismissRequest = { },
 //            confirmButton = {
@@ -643,19 +642,19 @@ fun BillScreen(
 //
 //                    Spacer(Modifier.height(16.dp))
 //                    when (uiState) {
-//                        is hu.ait.maral.fairshare.ui.screen.start.AiBillUiState.LoadingAI,
-//                        is hu.ait.maral.fairshare.ui.screen.start.AiBillUiState.Uploading -> {
+//                        is hu.ait.maral.fairshare.ui.screen.bill.ai.AiBillUiState.LoadingAI,
+//                        is hu.ait.maral.fairshare.ui.screen.bill.ai.AiBillUiState.Uploading -> {
 //                            CircularProgressIndicator()
 //                        }
-//                        is hu.ait.maral.fairshare.ui.screen.start.AiBillUiState.AIError -> {
+//                        is hu.ait.maral.fairshare.ui.screen.bill.ai.AiBillUiState.AIError -> {
 //                            Text(
-//                                "AI Error: ${(uiState as hu.ait.maral.fairshare.ui.screen.start.AiBillUiState.AIError).message}",
+//                                "AI Error: ${(uiState as hu.ait.maral.fairshare.ui.screen.bill.ai.AiBillUiState.AIError).message}",
 //                                color = MaterialTheme.colorScheme.error
 //                            )
 //                        }
-//                        is hu.ait.maral.fairshare.ui.screen.start.AiBillUiState.UploadError -> {
+//                        is hu.ait.maral.fairshare.ui.screen.bill.ai.AiBillUiState.UploadError -> {
 //                            Text(
-//                                "Upload Error: ${(uiState as hu.ait.maral.fairshare.ui.screen.start.AiBillUiState.UploadError).message}",
+//                                "Upload Error: ${(uiState as hu.ait.maral.fairshare.ui.screen.bill.ai.AiBillUiState.UploadError).message}",
 //                                color = MaterialTheme.colorScheme.error
 //                            )
 //                        }
@@ -664,7 +663,7 @@ fun BillScreen(
 //
 //                    Spacer(Modifier.height(16.dp))
 //
-//                    if (uiState is hu.ait.maral.fairshare.ui.screen.start.AiBillUiState.AIResultReady) {
+//                    if (uiState is hu.ait.maral.fairshare.ui.screen.bill.ai.AiBillUiState.AIResultReady) {
 //                        Text("AI Extracted Items:", style = MaterialTheme.typography.titleMedium)
 //                        Spacer(Modifier.height(8.dp))
 //                    }
@@ -674,7 +673,7 @@ fun BillScreen(
 //
 //                // Editable AI items
 //                /////////////////////////////
-//                if (uiState is hu.ait.maral.fairshare.ui.screen.start.AiBillUiState.AIResultReady) {
+//                if (uiState is hu.ait.maral.fairshare.ui.screen.bill.ai.AiBillUiState.AIResultReady) {
 //                    itemsIndexed(editableItems) { index, item ->
 //                        Card(
 //                            modifier = Modifier
@@ -709,7 +708,7 @@ fun BillScreen(
 //                    if (bitmap != null) {
 //                        Spacer(Modifier.height(16.dp))
 //                        Button(
-//                            enabled = uiState is hu.ait.maral.fairshare.ui.screen.start.AiBillUiState.AIResultReady,
+//                            enabled = uiState is hu.ait.maral.fairshare.ui.screen.bill.ai.AiBillUiState.AIResultReady,
 //                            onClick = {
 //                                vm.uploadAIBill(
 //                                    groupId = groupId,
@@ -723,7 +722,7 @@ fun BillScreen(
 //                                )
 //                            }
 //                        ) {
-//                            if (uiState is hu.ait.maral.fairshare.ui.screen.start.AiBillUiState.Uploading) {
+//                            if (uiState is hu.ait.maral.fairshare.ui.screen.bill.ai.AiBillUiState.Uploading) {
 //                                CircularProgressIndicator()
 //                            } else Text("Upload Bill")
 //                        }

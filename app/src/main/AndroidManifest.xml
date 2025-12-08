@@ -30,7 +30,7 @@
             </intent-filter>
         </activity>
         <provider
-            android:name=".ui.screen.room.ComposeFileProvider"
+            android:name=".ui.screen.bill.ComposeFileProvider"
             android:authorities=
                 "hu.ait.maral.fairshare.fileprovider"
             android:grantUriPermissions="true"

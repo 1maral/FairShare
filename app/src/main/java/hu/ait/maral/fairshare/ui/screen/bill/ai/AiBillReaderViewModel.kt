@@ -1,17 +1,18 @@
-package hu.ait.maral.fairshare.ui.screen.start
+package hu.ait.maral.fairshare.ui.screen.bill.ai
 
 import android.content.ContentResolver
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.ImageDecoder
-import android.net.Uri
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.ai.client.generativeai.GenerativeModel
+import com.google.ai.client.generativeai.type.BlockThreshold
+import com.google.ai.client.generativeai.type.Content
+import com.google.ai.client.generativeai.type.HarmCategory
+import com.google.ai.client.generativeai.type.ImagePart
+import com.google.ai.client.generativeai.type.SafetySetting
+import com.google.ai.client.generativeai.type.TextPart
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
@@ -54,17 +55,17 @@ class AiBillReaderViewModel : ViewModel() {
     // -----------------------
     // Gemini AI scanning
     // -----------------------
-    private val genModel = com.google.ai.client.generativeai.GenerativeModel(
+    private val genModel = GenerativeModel(
         modelName = "gemini-2.5-flash",
         apiKey = "AIzaSyDjqgKerqnjD_Z7QZ2pxDYiBwYI4rq9cOI",
         safetySettings = listOf(
-            com.google.ai.client.generativeai.type.SafetySetting(
-                com.google.ai.client.generativeai.type.HarmCategory.HARASSMENT,
-                com.google.ai.client.generativeai.type.BlockThreshold.LOW_AND_ABOVE
+            SafetySetting(
+                HarmCategory.HARASSMENT,
+                BlockThreshold.LOW_AND_ABOVE
             ),
-            com.google.ai.client.generativeai.type.SafetySetting(
-                com.google.ai.client.generativeai.type.HarmCategory.HATE_SPEECH,
-                com.google.ai.client.generativeai.type.BlockThreshold.LOW_AND_ABOVE
+            SafetySetting(
+                HarmCategory.HATE_SPEECH,
+                BlockThreshold.LOW_AND_ABOVE
             ),
         )
     )
@@ -82,11 +83,11 @@ class AiBillReaderViewModel : ViewModel() {
                             "Do not add commentary."
 
 
-                val inputContent = com.google.ai.client.generativeai.type.Content(
+                val inputContent = Content(
                     role = "user",
                     parts = listOf(
-                        com.google.ai.client.generativeai.type.ImagePart(bitmap),
-                        com.google.ai.client.generativeai.type.TextPart(text = prompt)
+                        ImagePart(bitmap),
+                        TextPart(text = prompt)
                     )
                 )
 

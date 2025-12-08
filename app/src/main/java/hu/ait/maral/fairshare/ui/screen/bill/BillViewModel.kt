@@ -1,4 +1,4 @@
-package hu.ait.maral.fairshare.ui.screen.room
+package hu.ait.maral.fairshare.ui.screen.bill
 
 import android.content.ContentResolver
 import android.content.Context
