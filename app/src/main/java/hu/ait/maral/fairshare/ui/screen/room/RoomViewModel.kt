@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
+import hu.ait.maral.fairshare.data.Bill
 import hu.ait.maral.fairshare.data.Group
 import hu.ait.maral.fairshare.data.User
 
@@ -22,7 +23,10 @@ class RoomViewModel : ViewModel() {
     var errorMessage = mutableStateOf<String?>(null)
         private set
 
-    // Map<memberId, amountUserOwesThemInEur>
+    var bills = mutableStateOf<List<Bill>>(emptyList())
+        private set
+
+
     var owedPerPerson = mutableStateOf<Map<String, Double>>(emptyMap())
         private set
 
@@ -30,9 +34,11 @@ class RoomViewModel : ViewModel() {
     private val auth = FirebaseAuth.getInstance()
 
     private var groupListener: ListenerRegistration? = null
+    private var billsListener: ListenerRegistration? = null
 
-    val currentUserId: String?
-        get() = auth.currentUser?.uid
+    val currentUserId: String
+        get() = auth.currentUser?.uid ?: ""
+
 
     /**
      * Observe group document in real-time.
@@ -129,13 +135,32 @@ class RoomViewModel : ViewModel() {
         return result
     }
 
-    fun getBills(groupId: String): List<Bill> {
+
+
+    override fun onCleared() {
+        super.onCleared()
+        groupListener?.remove()
+    }
+
+    fun fetchUserAvatar(uid: String, callback: (String?) -> Unit) {
+        db.collection("users").document(uid).get()
+            .addOnSuccessListener { snap ->
+                val url = snap.getString("profilePictureUrl")
+                callback(url)
+            }
+            .addOnFailureListener {
+                callback(null)
+            }
+    }
+
+
+    fun startBillsListener(groupId: String) {
         if (groupId.isBlank()) {
             errorMessage.value = "Invalid group ID for bills."
-            return emptyList()
+            return
         }
 
-        // Remove previous listener
+        // Remove old listener if any
         billsListener?.remove()
 
         isLoading.value = true
@@ -156,29 +181,12 @@ class RoomViewModel : ViewModel() {
                         bill?.copy(billId = doc.id)
                     }
 
-                    // Sort newest → oldest by billDate
-                    bills.value = list.sortedByDescending { it.billDate }
+                    // Newest first if you have billDate
+                    val sorted = list.sortedByDescending { it.billDate }
+                    bills.value = sorted
                 }
 
                 isLoading.value = false
-            }
-
-        return bills.value
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        groupListener?.remove()
-    }
-
-    fun fetchUserAvatar(uid: String, callback: (String?) -> Unit) {
-        db.collection("users").document(uid).get()
-            .addOnSuccessListener { snap ->
-                val url = snap.getString("profilePictureUrl")
-                callback(url)
-            }
-            .addOnFailureListener {
-                callback(null)
             }
     }
 }
