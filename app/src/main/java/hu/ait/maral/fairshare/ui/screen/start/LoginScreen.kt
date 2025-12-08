@@ -1,5 +1,6 @@
 package hu.ait.maral.fairshare.ui.screen.start
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -15,6 +16,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -22,6 +24,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import hu.ait.maral.fairshare.R
 import hu.ait.maral.fairshare.ui.theme.BackgroundPink
 import hu.ait.maral.fairshare.ui.theme.ButtonGreen
 import hu.ait.maral.fairshare.ui.theme.LogoGreen
@@ -55,17 +58,27 @@ fun LoginScreen(
                 .padding(bottom = 20.dp)
         )
 
-        // Title
-        Text(
-            text = "FairShare",
+        Column(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .padding(top = 50.dp),
-            fontSize = 34.sp,
-            fontWeight = FontWeight.ExtraBold,
-            // Custom green color for better UI :)
-            color = LogoGreen
-        )
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "FairShare",
+                fontSize = 34.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = LogoGreen
+            )
+
+            Spacer(modifier = Modifier.height(45.dp))
+
+            Image(
+                painter = painterResource(id = R.drawable.logo),
+                contentDescription = "FairShare Logo",
+                modifier = Modifier.size(150.dp)
+            )
+        }
 
         // Main Login Fields
         Column(
@@ -133,7 +146,6 @@ fun LoginScreen(
                     Text("Login", color = Color.White)
                 }
 
-                // REGISTER BUTTON
                 OutlinedButton(
                     onClick = { onNavigateToRegister(email, password) },
                     colors = ButtonDefaults.outlinedButtonColors(
@@ -145,7 +157,6 @@ fun LoginScreen(
             }
         }
 
-        // Snackbar + Loading UI State
         when (val state = viewModel.loginUiState) {
 
             is LoginUiState.Error -> {

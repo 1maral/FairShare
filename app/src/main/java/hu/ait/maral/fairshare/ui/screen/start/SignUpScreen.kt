@@ -380,7 +380,7 @@ fun SignUpScreen(
                         OutlinedTextField(
                             value = newPaymentValue,
                             onValueChange = { newPaymentValue = it },
-                            placeholder = { Text("ex: @venmoUser") },
+                            placeholder = { Text("ex: @User") },
                             singleLine = true,
                             modifier = Modifier.weight(1.5f)
                         )

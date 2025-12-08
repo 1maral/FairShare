@@ -291,7 +291,7 @@ fun ProfileScreen(
                             OutlinedTextField(
                                 value = newPaymentValue,
                                 onValueChange = { newPaymentValue = it },
-                                placeholder = { Text("username / email / id") },
+                                placeholder = { Text("ex: @User") },
                                 singleLine = true,
                                 modifier = Modifier.weight(1f)
                             )

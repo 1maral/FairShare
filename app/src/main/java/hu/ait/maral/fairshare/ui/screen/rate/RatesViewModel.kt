@@ -36,7 +36,6 @@ class RatesViewModel @Inject constructor(
                     return@launch
                 }
 
-                // 🔹 Convert MoneyResult → FxRates (EUR = base)
                 val map = mutableMapOf<String, Double>()
 
                 r.uSD?.let { map["USD"] = it }

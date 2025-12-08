@@ -1,6 +1,7 @@
-package hu.ait.maral.fairshare.ui.screen
+package hu.ait.maral.fairshare.ui.screen.room
 
 import android.graphics.BitmapFactory
+import android.Manifest
 import android.net.Uri
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -21,7 +22,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -111,6 +111,7 @@ fun BillScreen(
         }
     }
 
+
     // ------------------------------
     // CAMERA LOGIC
     // ------------------------------
@@ -120,7 +121,7 @@ fun BillScreen(
         ActivityResultContracts.TakePicture()
     ) { success -> hasImage = success }
     val cameraPermissionState =
-        rememberPermissionState(android.Manifest.permission.CAMERA)
+        rememberPermissionState(Manifest.permission.CAMERA)
     fun takePhoto() {
         val uri = ComposeFileProvider.getImageUri(context)
         imageUri = uri
@@ -473,6 +474,7 @@ fun BillScreen(
                             viewModel.updateBalance(
                                 groupId, finalItems, itemAssignments, splitMethod
                             )
+                            onUploadSuccess()
                         }
                     } else {
                         viewModel.uploadBillImage(
@@ -499,20 +501,26 @@ fun BillScreen(
                     is BillUploadUiState.LoadingBillUpload,
                     is BillUploadUiState.LoadingImageUpload ->
                         CircularProgressIndicator()
+
                     is BillUploadUiState.BillUploadSuccess,
-                    is BillUploadUiState.ImageUploadSuccess ->
-                        onUploadSuccess()
+                    is BillUploadUiState.ImageUploadSuccess -> {
+                        // Only show a message here instead of navigating
+                        Text("Bill saved successfully!")
+                    }
+
                     is BillUploadUiState.ErrorDuringBillUpload ->
                         Text("Error: ${state.error}")
+
                     is BillUploadUiState.ErrorDuringImageUpload ->
                         Text("Image error: ${state.error}")
+
                     else -> {}
                 }
+
             }
         }
     }
 }
-
 
 
 

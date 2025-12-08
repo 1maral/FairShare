@@ -5,6 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
@@ -60,6 +61,26 @@ fun HomeScreen(
     var groupName by remember { mutableStateOf("") }
     var memberEmails by remember { mutableStateOf(listOf("")) }
 
+    // state for adding members to an existing group
+    var isAddMembersDialogOpen by remember { mutableStateOf(false) }
+    var selectedGroupId by remember { mutableStateOf<String?>(null) }
+    var addMemberEmails by remember { mutableStateOf(listOf("")) }
+
+    // ⭐ Snackbar host state
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // Show snackbar whenever errorMessage becomes non-null
+    LaunchedEffect(errorMessage) {
+        errorMessage?.let { msg ->
+            snackbarHostState.showSnackbar(
+                message = msg,
+                withDismissAction = true,
+                duration = SnackbarDuration.Short
+            )
+
+        }
+    }
+
     LaunchedEffect(Unit) {
         viewModel.loadUserPreferredCurrency()
         viewModel.loadGroupsForUser()
@@ -105,13 +126,14 @@ fun HomeScreen(
                     }
                 }
             )
-        }
-    ) { padding ->
-
+        },
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) } // ⭐ here
+    ) { paddingValues ->
         Column(
             modifier = Modifier
-                .padding(padding)
+                .padding(paddingValues)
                 .padding(16.dp)
+                .fillMaxSize()
         ) {
 
             when {
@@ -124,14 +146,7 @@ fun HomeScreen(
                     }
                 }
 
-                errorMessage != null -> {
-                    Text(
-                        text = "Error: $errorMessage",
-                        color = Color.Red,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(8.dp)
-                    )
-                }
+                // 👇 no more `errorMessage != null` branch that overwrote content
 
                 groups.isEmpty() -> {
                     Text(
@@ -189,6 +204,11 @@ fun HomeScreen(
                             GroupCard(
                                 modifier = Modifier.fillMaxWidth(),
                                 onClick = { onRoomClick(group.groupId) },
+                                onAddMemberClick = {
+                                    selectedGroupId = group.groupId
+                                    isAddMembersDialogOpen = true
+                                    addMemberEmails = listOf("")
+                                },
                                 group = GroupUi(
                                     groupId = group.groupId,
                                     name = group.name,
@@ -204,6 +224,7 @@ fun HomeScreen(
             }
         }
 
+        // Create new group dialog
         if (isAddGroupDialogOpen) {
             AlertDialog(
                 onDismissRequest = { isAddGroupDialogOpen = false },
@@ -280,6 +301,82 @@ fun HomeScreen(
                 }
             )
         }
+
+        // Add members to existing group dialog
+        if (isAddMembersDialogOpen && selectedGroupId != null) {
+            AlertDialog(
+                onDismissRequest = {
+                    isAddMembersDialogOpen = false
+                    selectedGroupId = null
+                    addMemberEmails = listOf("")
+                },
+                title = {
+                    Text(
+                        "Add members to group",
+                        fontWeight = FontWeight.Bold,
+                        color = ButtonGreen
+                    )
+                },
+                text = {
+                    Column {
+                        Text(text = "Member emails:")
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        addMemberEmails.forEachIndexed { index, email ->
+                            OutlinedTextField(
+                                value = email,
+                                onValueChange = { new ->
+                                    addMemberEmails = addMemberEmails.toMutableList().also {
+                                        it[index] = new
+                                    }
+                                },
+                                placeholder = { Text("email@fairshare.com") },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 8.dp),
+                                singleLine = true
+                            )
+                        }
+
+                        TextButton(
+                            onClick = { addMemberEmails = addMemberEmails + "" }
+                        ) {
+                            Text("Add another email", color = ButtonGreen)
+                        }
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = ButtonGreen
+                        ),
+                        onClick = {
+                            val gid = selectedGroupId
+                            if (gid != null) {
+                                viewModel.addMembersToGroup(gid, addMemberEmails)
+                            }
+                            isAddMembersDialogOpen = false
+                            selectedGroupId = null
+                            addMemberEmails = listOf("")
+                        }
+                    ) {
+                        Text("Add", color = Color.White)
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = {
+                            isAddMembersDialogOpen = false
+                            selectedGroupId = null
+                            addMemberEmails = listOf("")
+                        }
+                    ) {
+                        Text("Cancel", color = Color.Red)
+                    }
+                }
+            )
+        }
     }
 }
 
@@ -301,6 +398,7 @@ private fun formatAmount(amount: Double): String {
 fun GroupCard(
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
+    onAddMemberClick: () -> Unit,
     group: GroupUi,
     currencyCode: String
 ) {
@@ -318,7 +416,6 @@ fun GroupCard(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
 
-            // GROUP NAME
             Text(
                 text = group.name,
                 style = typography.titleMedium,
@@ -328,7 +425,6 @@ fun GroupCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // MEMBER NAME + AVATAR COLUMN
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -338,7 +434,6 @@ fun GroupCard(
                         modifier = Modifier.weight(1f),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        // Name
                         Text(
                             text = group.memberNames[i],
                             fontWeight = FontWeight.Medium,
@@ -347,7 +442,6 @@ fun GroupCard(
 
                         Spacer(modifier = Modifier.height(6.dp))
 
-                        // Avatar (circle)
                         val avatarUrl = group.memberAvatarUrls[i]
                         if (avatarUrl != null) {
                             AsyncImage(
@@ -392,6 +486,20 @@ fun GroupCard(
                 }
             }
 
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                IconButton(onClick = onAddMemberClick) {
+                    Icon(
+                        imageVector = Icons.Filled.Add,
+                        contentDescription = "Add member",
+                        tint = ButtonGreen
+                    )
+                }
+            }
         }
     }
 }

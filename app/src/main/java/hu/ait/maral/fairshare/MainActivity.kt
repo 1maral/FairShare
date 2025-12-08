@@ -27,8 +27,8 @@ import hu.ait.maral.fairshare.ui.navigation.ProfileScreenKey
 import hu.ait.maral.fairshare.ui.navigation.RoomScreenKey
 import hu.ait.maral.fairshare.ui.navigation.SignUpScreenKey
 import hu.ait.maral.fairshare.ui.navigation.SplashScreenKey
-import hu.ait.maral.fairshare.ui.screen.BillScreen
-import hu.ait.maral.fairshare.ui.screen.RoomScreen
+import hu.ait.maral.fairshare.ui.screen.room.BillScreen
+import hu.ait.maral.fairshare.ui.screen.room.RoomScreen
 import hu.ait.maral.fairshare.ui.screen.home.HomeScreen
 import hu.ait.maral.fairshare.ui.screen.notifications.NotificationsScreen
 import hu.ait.maral.fairshare.ui.screen.profile.ProfileScreen

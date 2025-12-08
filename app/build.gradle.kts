@@ -105,4 +105,7 @@ dependencies {
 
     implementation(libs.generativeai)
     implementation(libs.androidx.ui.graphics)
+    // adding for horizontal scrollable card! - maral
+    implementation("androidx.compose.foundation:foundation")
+    implementation("androidx.compose.foundation:foundation-layout")
 }

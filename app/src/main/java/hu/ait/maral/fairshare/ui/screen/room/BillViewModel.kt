@@ -1,4 +1,4 @@
-package hu.ait.maral.fairshare.ui.screen
+package hu.ait.maral.fairshare.ui.screen.room
 
 import android.content.ContentResolver
 import android.content.Context
@@ -17,6 +17,7 @@ import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.FirebaseFirestore
+import hu.ait.maral.fairshare.R
 import hu.ait.maral.fairshare.data.Bill
 import hu.ait.maral.fairshare.data.Item
 import hu.ait.maral.fairshare.data.SplitMethod
@@ -51,7 +52,7 @@ class BillViewModel : ViewModel() {
     private val auth: FirebaseAuth = Firebase.auth
 
     /**
-     * Uploads a bill without an image
+     * Uploads a bill without an image.
      */
     fun uploadBill(
         groupId: String,
@@ -88,9 +89,7 @@ class BillViewModel : ViewModel() {
             }
     }
 
-    /**
-     * Uploads a bill image to Supabase, then creates the bill
-     */
+
     @RequiresApi(Build.VERSION_CODES.P)
     fun uploadBillImage(
         groupId: String,
@@ -107,7 +106,6 @@ class BillViewModel : ViewModel() {
             try {
                 billUploadUiState = BillUploadUiState.LoadingImageUpload
 
-                // Decode image
                 val source = ImageDecoder.createSource(contentResolver, imageUri)
                 val bitmap = ImageDecoder.decodeBitmap(source)
 
@@ -115,7 +113,6 @@ class BillViewModel : ViewModel() {
                 bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos)
                 val imageInBytes = baos.toByteArray()
 
-                // Upload image to Supabase
                 val bucket = supabase.storage.from("bills")
                 val fileName = "uploads/${System.currentTimeMillis()}.jpg"
                 bucket.upload(fileName, imageInBytes)
@@ -123,7 +120,6 @@ class BillViewModel : ViewModel() {
 
                 billUploadUiState = BillUploadUiState.ImageUploadSuccess
 
-                // Now upload the bill itself with the image URL
                 uploadBill(
                     groupId = groupId,
                     title = title,
@@ -156,14 +152,12 @@ class BillViewModel : ViewModel() {
                 val usersCollection = db.collection("users")
                 val resultList = mutableListOf<Pair<String, String>>()
 
-                // Fetch display name for each member UID
                 memberIds.forEach { uid ->
                     usersCollection.document(uid).get()
                         .addOnSuccessListener { userDoc ->
                             val name = userDoc.getString("name") ?: "Unknown"
                             resultList.add(uid to name)
 
-                            // When all users are loaded, return
                             if (resultList.size == memberIds.size) {
                                 onResult(resultList)
                             }
@@ -181,10 +175,7 @@ class BillViewModel : ViewModel() {
             }
     }
 
-    /**
-     * Updates group balances in Firestore after a bill is uploaded.
-     * Assumes "memberIds" is a List<String> and "balances" is a Map<String, Double>.
-     */
+
     fun updateBalance(
         groupId: String,
         billItems: List<Item>,
@@ -193,56 +184,72 @@ class BillViewModel : ViewModel() {
     ) {
         val db = FirebaseFirestore.getInstance()
         val groupRef = db.collection("groups").document(groupId)
+        val authorId = auth.currentUser?.uid ?: ""
 
         db.runTransaction { tx ->
             val groupSnap = tx.get(groupRef)
 
             val members = groupSnap.get("memberIds") as? List<String> ?: emptyList()
-            val existingBalances =
-                groupSnap.get("balances") as? Map<String, Double> ?: mapOf()
 
-            // Start with the existing balances
-            val newBalances = existingBalances.toMutableMap()
-            members.forEach { uid ->
-                if (!newBalances.containsKey(uid)) {
-                    newBalances[uid] = 0.0
-                }
+            // Firestore stores numbers as Long sometimes → convert safely
+            val rawBalances = groupSnap.get("balances") as? Map<String, Any> ?: emptyMap()
+            val existingBalances = rawBalances.mapValues { (_, v) ->
+                (v as Number).toDouble()
             }
 
+            val newBalances = existingBalances.toMutableMap()
+
+            // Ensure all members exist in the map
+            members.forEach { uid ->
+                if (!newBalances.containsKey(uid)) newBalances[uid] = 0.0
+            }
+
+            val total = billItems.sumOf { it.itemPrice }
+
             when (splitMethod) {
-                // Everyone pays equal portion of total bill
+
                 SplitMethod.EQUAL -> {
-                    val total = billItems.sumOf { it.itemPrice }
                     if (members.isNotEmpty()) {
                         val perPerson = total / members.size
+
+                        // ❗ Members owe money → NEGATIVE
                         members.forEach { uid ->
-                            newBalances[uid] = (newBalances[uid] ?: 0.0) + perPerson
+                            newBalances[uid] = (newBalances[uid] ?: 0.0) - perPerson
                         }
                     }
                 }
 
-                // Each item belongs to one user → add entire item price to that user
                 SplitMethod.BY_ITEM -> {
                     billItems.forEach { item ->
                         val assignedUid = itemAssignments[item.itemId] ?: return@forEach
+
+                        // ❗ Each assigned person owes their item price → NEGATIVE
                         newBalances[assignedUid] =
-                            (newBalances[assignedUid] ?: 0.0) + item.itemPrice
+                            (newBalances[assignedUid] ?: 0.0) - item.itemPrice
                     }
                 }
             }
 
-            // Write back updated balances (Map<String, Double>)
-            tx.update(groupRef, "balances", newBalances as Map<String, Double>)
+            // ❗ Author paid the whole bill → POSITIVE
+            newBalances[authorId] = (newBalances[authorId] ?: 0.0) + total
+
+            tx.update(groupRef, "balances", newBalances)
         }
+            .addOnFailureListener { e ->
+                println("❌ Balance update FAILED: ${e.message}")
+            }
+            .addOnSuccessListener {
+                println("✅ Balance update SUCCESS")
+            }
     }
+
 }
 
 /**
  * Separate FileProvider used for image Uris (camera/gallery).
- * This stays as its own class, not part of the ViewModel.
  */
 class ComposeFileProvider : FileProvider(
-    hu.ait.maral.fairshare.R.xml.filepaths
+    R.xml.filepaths
 ) {
     companion object {
         fun getImageUri(context: Context): Uri {
@@ -254,7 +261,7 @@ class ComposeFileProvider : FileProvider(
                 directory,
             )
             val authority = context.packageName + ".fileprovider"
-            return FileProvider.getUriForFile(
+            return getUriForFile(
                 context,
                 authority,
                 file,

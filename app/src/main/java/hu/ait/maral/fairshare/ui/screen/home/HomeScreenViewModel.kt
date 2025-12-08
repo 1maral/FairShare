@@ -3,6 +3,7 @@ package hu.ait.maral.fairshare.ui.screen.home
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import hu.ait.maral.fairshare.data.Group
 import hu.ait.maral.fairshare.data.User
@@ -27,6 +28,7 @@ class HomeScreenViewModel : ViewModel() {
     fun loadGroupsForUser() {
         val user = auth.currentUser ?: return
         isLoading.value = true
+        errorMessage.value = null
 
         db.collection("groups")
             .whereArrayContains("memberIds", user.uid)
@@ -172,4 +174,96 @@ class HomeScreenViewModel : ViewModel() {
             }
     }
 
+
+    fun addMembersToGroup(groupId: String, memberEmails: List<String>) {
+        val rawEmails = memberEmails
+            .map { it.trim().lowercase() }
+            .filter { it.isNotBlank() }
+            .distinct()
+
+        if (rawEmails.isEmpty()) {
+            errorMessage.value = "Please enter at least one email."
+            return
+        }
+
+        isLoading.value = true
+        errorMessage.value = null
+
+        val groupRef = db.collection("groups").document(groupId)
+
+        groupRef.get()
+            .addOnSuccessListener { groupSnap ->
+                if (!groupSnap.exists()) {
+                    errorMessage.value = "Group not found."
+                    isLoading.value = false
+                    return@addOnSuccessListener
+                }
+
+                val group = groupSnap.toObject(Group::class.java)
+                val existingMemberIds = group?.memberIds ?: emptyList()
+                val existingPendingIds = group?.pendingMemberIds ?: emptyList()
+
+                val emailToUid = mutableMapOf<String, String>()
+                val invalid = mutableListOf<String>()
+                var processed = 0
+                val total = rawEmails.size
+
+                fun finishValidation() {
+                    if (invalid.isNotEmpty()) {
+                        errorMessage.value = "Invalid users: ${invalid.joinToString()}"
+                        isLoading.value = false
+                        return
+                    }
+
+                    val newPendingIds = emailToUid.values
+                        .filter { it !in existingMemberIds && it !in existingPendingIds }
+                        .distinct()
+
+                    if (newPendingIds.isEmpty()) {
+                        errorMessage.value = "No new members to add."
+                        isLoading.value = false
+                        return
+                    }
+
+                    groupRef.update(
+                        "pendingMemberIds",
+                        FieldValue.arrayUnion(*newPendingIds.toTypedArray())
+                    )
+                        .addOnSuccessListener {
+                            isLoading.value = false
+                            loadGroupsForUser()
+                        }
+                        .addOnFailureListener { e ->
+                            errorMessage.value = e.localizedMessage
+                            isLoading.value = false
+                        }
+                }
+
+                rawEmails.forEach { email ->
+                    db.collection("users")
+                        .whereEqualTo("email", email)
+                        .limit(1)
+                        .get()
+                        .addOnSuccessListener { snap ->
+                            processed++
+                            val doc = snap.documents.firstOrNull()
+                            val uid = doc?.getString("uid")
+
+                            if (uid != null) emailToUid[email] = uid
+                            else invalid.add(email)
+
+                            if (processed == total) finishValidation()
+                        }
+                        .addOnFailureListener {
+                            processed++
+                            invalid.add(email)
+                            if (processed == total) finishValidation()
+                        }
+                }
+            }
+            .addOnFailureListener { e ->
+                errorMessage.value = e.localizedMessage
+                isLoading.value = false
+            }
+    }
 }
