@@ -15,3 +15,5 @@ val LogoGreen = Color(0xFF008F5A)
 val ButtonGreen = Color(0xFF98C9A3)
 
 val BackgroundPink = Color(0xFFFFE4EC)
+
+val CardPink = Color(0xFFE76F8E)

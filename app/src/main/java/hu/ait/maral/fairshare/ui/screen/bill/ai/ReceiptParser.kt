@@ -1,4 +1,4 @@
-package hu.ait.maral.fairshare.ui.screen.start
+package hu.ait.maral.fairshare.ui.screen.bill.ai
 
 
 import hu.ait.maral.fairshare.data.Item

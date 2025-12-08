@@ -1,6 +1,9 @@
 package hu.ait.maral.fairshare.ui.screen.room
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.pager.HorizontalPager
@@ -21,6 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
@@ -31,6 +35,7 @@ import hu.ait.maral.fairshare.ui.screen.RoomViewModel
 import hu.ait.maral.fairshare.ui.screen.rate.RatesViewModel
 import hu.ait.maral.fairshare.ui.theme.BackgroundPink
 import hu.ait.maral.fairshare.ui.theme.ButtonGreen
+import hu.ait.maral.fairshare.ui.theme.CardPink
 import hu.ait.maral.fairshare.ui.theme.LogoGreen
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -65,11 +70,11 @@ fun RoomScreen(
                 title = {
                     Text(
                         text = groupState?.name ?: "Room",
-                        color = ButtonGreen
+                        color = LogoGreen
                     )
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = ButtonGreen.copy(alpha = 0.1f)
+                    containerColor = ButtonGreen
                 )
             )
         },
@@ -115,108 +120,124 @@ fun RoomScreen(
                         modifier = Modifier.align(Alignment.Center)
                     )
                 }
-
                 else -> {
-                    Column(
+                    LazyColumn(
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(16.dp)
                     ) {
                         // ---------------- GROUP BALANCES ----------------
-                        Text(
-                            text = "Group balances",
-                            style = MaterialTheme.typography.titleMedium
-                        )
+                        item {
+                            Text(
+                                text = "Group Balances",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = LogoGreen,
+                                modifier = Modifier.padding(vertical = 2.dp)
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                        }
+                        item {
+                            LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                itemsIndexed(groupState.members) { index, memberName ->
+                                    val memberId = groupState.memberIds.getOrNull(index)
 
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            itemsIndexed(groupState.members) { index, memberName ->
-                                val memberId = groupState.memberIds.getOrNull(index)
-
-                                // Skip if no memberId or if it's the current user
-                                if (memberId == null || memberId == currentUserId) {
-                                    return@itemsIndexed
-                                }
-
-                                val userBalance = groupState.balances[currentUserId] ?: 0.0
-                                val otherBalance = groupState.balances[memberId] ?: 0.0
-                                val owedEur = owedPerPerson[memberId] ?: 0.0
-
-                                var avatarUrl by remember(memberId) { mutableStateOf<String?>(null) }
-
-                                LaunchedEffect(memberId) {
-                                    viewModel.fetchUserAvatar(memberId) { url ->
-                                        avatarUrl = url
+                                    // Skip if no memberId or if it's the current user
+                                    if (memberId == null || memberId == currentUserId) {
+                                        return@itemsIndexed
                                     }
+
+                                    val userBalance = groupState.balances[currentUserId] ?: 0.0
+                                    val otherBalance = groupState.balances[memberId] ?: 0.0
+                                    val owedEur = owedPerPerson[memberId] ?: 0.0
+
+                                    var avatarUrl by remember(memberId) {
+                                        mutableStateOf<String?>(
+                                            null
+                                        )
+                                    }
+
+                                    LaunchedEffect(memberId) {
+                                        viewModel.fetchUserAvatar(memberId) { url ->
+                                            avatarUrl = url
+                                        }
+                                    }
+
+                                    val statusText: String
+                                    val statusColor: Color
+
+                                    if (owedEur > 0.0) {
+                                        val converted =
+                                            convertAmount(owedEur, preferredCurrency, fxRates)
+                                        statusText =
+                                            "You owe: $preferredCurrency ${formatAmount(converted)}"
+                                        statusColor = Color.Red
+                                    } else if (userBalance > 0 && otherBalance < 0) {
+                                        val theyOweEur = minOf(userBalance, -otherBalance)
+                                        val converted =
+                                            convertAmount(theyOweEur, preferredCurrency, fxRates)
+                                        statusText =
+                                            "They owe: $preferredCurrency ${formatAmount(converted)}"
+                                        statusColor = LogoGreen
+                                    } else {
+                                        statusText = "Settled"
+                                        statusColor = Color.Gray
+                                    }
+
+                                    MemberBalanceCard(
+                                        name = memberName,
+                                        statusText = statusText,
+                                        statusColor = statusColor,
+                                        avatarUrl = avatarUrl
+                                    )
                                 }
-
-                                val statusText: String
-                                val statusColor: Color
-
-                                if (owedEur > 0.0) {
-                                    val converted =
-                                        convertAmount(owedEur, preferredCurrency, fxRates)
-                                    statusText =
-                                        "You owe: $preferredCurrency ${formatAmount(converted)}"
-                                    statusColor = Color.Red
-                                } else if (userBalance > 0 && otherBalance < 0) {
-                                    val theyOweEur = minOf(userBalance, -otherBalance)
-                                    val converted =
-                                        convertAmount(theyOweEur, preferredCurrency, fxRates)
-                                    statusText =
-                                        "They owe: $preferredCurrency ${formatAmount(converted)}"
-                                    statusColor = ButtonGreen
-                                } else {
-                                    statusText = "Settled"
-                                    statusColor = Color.Gray
-                                }
-
-                                MemberBalanceCard(
-                                    name = memberName,
-                                    statusText = statusText,
-                                    statusColor = statusColor,
-                                    avatarUrl = avatarUrl
-                                )
                             }
                         }
 
                         // ---------------- BILL RECEIPTS ----------------
-                        Spacer(modifier = Modifier.height(24.dp))
+                        item {
+                            Spacer(modifier = Modifier.height(24.dp))
 
-                        Text(
-                            text = "Bill Receipts",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = LogoGreen,
-                            modifier = Modifier.padding(vertical = 8.dp)
-                        )
-
-                        val pagerState = rememberPagerState(pageCount = { bills.size })
-
-                        if (bills.isNotEmpty()) {
-                            HorizontalPager(
-                                state = pagerState,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(340.dp)
-                            ) { page ->
-                                val bill = bills[page]
-
-                                BillCard(
-                                    bill = bill,
-                                    groupState = groupState,
-                                    preferredCurrency = preferredCurrency,
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-                            }
-                        } else {
                             Text(
-                                text = "No bills yet.",
-                                style = MaterialTheme.typography.bodyMedium,
+                                text = "Bill Receipts",
+                                style = MaterialTheme.typography.titleMedium,
                                 color = LogoGreen,
-                                modifier = Modifier.padding(8.dp)
+                                modifier = Modifier.padding(vertical = 8.dp)
                             )
                         }
+
+                        item {
+                            // Pager for bills
+                            val pagerState = rememberPagerState(pageCount = { bills.size })
+
+                            if (bills.isNotEmpty()) {
+                                HorizontalPager(
+                                    state = pagerState,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(360.dp) // slightly taller to fit image + items comfortably
+                                ) { page ->
+                                    val bill = bills[page]
+
+                                    // Call our custom BillCard composable
+                                    BillCard(
+                                        bill = bill,
+                                        groupState = groupState,
+                                        preferredCurrency = preferredCurrency,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 8.dp)
+                                    )
+                                }
+                            } else {
+                                Text(
+                                    text = "No bills yet.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = LogoGreen,
+                                    modifier = Modifier.padding(8.dp)
+                                )
+                            }
+                        }
+
                     }
                 }
             }
@@ -232,26 +253,25 @@ fun BillCard(
     modifier: Modifier = Modifier
 ) {
     Card(
-        shape = RoundedCornerShape(16.dp),
-        modifier = modifier,
+        shape = RoundedCornerShape(20.dp),
+        modifier = modifier
+            .fillMaxSize()
+            .padding(vertical = 8.dp),
         colors = CardDefaults.cardColors(
-            containerColor = BackgroundPink.copy(alpha = 0.2f)
+            containerColor = CardPink.copy(alpha = 0.4f)
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-
-            // Title
             Text(
                 text = bill.billTitle,
                 style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = ButtonGreen
+                fontWeight = FontWeight.ExtraBold,
+                color = LogoGreen
             )
 
             Spacer(Modifier.height(4.dp))
 
-            // Author name
             val authorName = remember(
                 bill.authorId,
                 groupState.memberIds,
@@ -267,24 +287,61 @@ fun BillCard(
                 color = Color.Gray
             )
 
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(4.dp))
 
-            // Receipt image if present
+            // -------------------
+            // IMAGE SECTION
+            // -------------------
+            var showFullImage by remember { mutableStateOf(false) }
+
             if (bill.imgUrl.isNotEmpty()) {
                 AsyncImage(
                     model = bill.imgUrl,
                     contentDescription = "bill image",
                     modifier = Modifier
-                        .size(90.dp)
-                        .align(Alignment.Start)
-                        .clip(RoundedCornerShape(8.dp)),
+                        .fillMaxWidth()
+                        .height(50.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable { showFullImage = true },
                     contentScale = ContentScale.Crop
                 )
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(8.dp))
+                // Fullscreen image dialog
+                if (showFullImage) {
+                    Dialog(onDismissRequest = { showFullImage = false }) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(CardPink.copy(alpha = 0.85f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            AsyncImage(
+                                model = bill.imgUrl,
+                                contentDescription = "full bill image",
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp)
+                                    .clickable { showFullImage = false },
+                                contentScale = ContentScale.Fit
+                            )
+                        }
+                    }
+                }
             }
 
-            // Items + who they're assigned to
-            Column(modifier = Modifier.fillMaxWidth()) {
+
+            // -------------------
+            // ITEMS LIST
+            // -------------------
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        color = Color.White.copy(alpha = 0.8f),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    .padding(8.dp)
+            ) {
                 bill.billItems.forEach { item ->
                     val assignedUserId = bill.itemAssignments[item.itemId]
                     val assignedUserName = if (assignedUserId != null) {
@@ -297,30 +354,59 @@ fun BillCard(
                         "Unassigned"
                     }
 
-                    Text(
-                        text = "${item.itemName} — $assignedUserName: ${item.itemPrice} $preferredCurrency",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = ButtonGreen
-                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = item.itemName,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = CardPink
+                        )
+                        Text(
+                            text = "$assignedUserName: ${item.itemPrice} $preferredCurrency",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Gray
+                        )
+                    }
                 }
             }
 
-            Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(4.dp))
+            Divider(color = Color.Gray.copy(alpha = 0.3f))
+            Spacer(Modifier.height(4.dp))
 
-            // Total
-            val total = bill.billItems.sumOf { it.itemPrice }
-
-            Text(
-                text = "Total: $total $preferredCurrency",
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
-                ),
-                color = ButtonGreen
-            )
+            // -------------------
+            // TOTAL ROW
+            // -------------------
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "Total",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp
+                    ),
+                    color = Color.Red
+                )
+                Text(
+                    text = "${bill.billItems.sumOf { it.itemPrice }} $preferredCurrency",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 18.sp
+                    ),
+                    color = LogoGreen
+                )
+                Spacer(Modifier.height(4.dp))
+            }
         }
     }
 }
+
 
 @Composable
 private fun MemberBalanceCard(
@@ -333,8 +419,8 @@ private fun MemberBalanceCard(
         modifier = Modifier
             .width(160.dp)
             .height(160.dp),
-        colors = cardColors(containerColor = Color(0xFFFFF0F5)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        colors = cardColors(containerColor = CardPink.copy(alpha = 0.4f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(
             modifier = Modifier
@@ -356,14 +442,14 @@ private fun MemberBalanceCard(
             } else {
                 Surface(
                     shape = CircleShape,
-                    color = ButtonGreen.copy(alpha = 0.2f),
+                    color = LogoGreen.copy(alpha = 0.2f),
                     modifier = Modifier.size(56.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Text(
                             text = name.firstOrNull()?.uppercase() ?: "",
                             style = MaterialTheme.typography.titleMedium,
-                            color = ButtonGreen
+                            color = LogoGreen
                         )
                     }
                 }
@@ -379,7 +465,14 @@ private fun MemberBalanceCard(
                 text = statusText,
                 style = MaterialTheme.typography.bodySmall,
                 color = statusColor,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        color = Color.White.copy(alpha = 0.8f),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    .padding(vertical = 6.dp, horizontal = 8.dp)
             )
         }
     }
