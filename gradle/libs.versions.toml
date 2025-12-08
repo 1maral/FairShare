@@ -33,8 +33,11 @@ retrofit="2.9.0"
 kotlinxSerialization="1.4.0"
 serializationConverter="0.8.0"
 coil="2.1.0"
+genai = "0.9.0"
 
 [libraries]
+
+generativeai = { group = "com.google.ai.client.generativeai", name = "generativeai", version.ref = "genai" }
 androidx-navigation = {group="androidx.navigation", name="navigation-runtime-ktx", version.ref="navigation"}
 androidx-navigation-compose = {group="androidx.navigation", name="navigation-compose", version.ref="navigation"}
 androidx-hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "androidxHilt" }

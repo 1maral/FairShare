@@ -18,6 +18,7 @@ import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
 import androidx.navigation3.scene.rememberSceneSetupNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import dagger.hilt.android.AndroidEntryPoint
+import hu.ait.maral.fairshare.ui.navigation.AiBillReaderScreenKey
 import hu.ait.maral.fairshare.ui.navigation.BillScreenKey
 import hu.ait.maral.fairshare.ui.navigation.HomeScreenKey
 import hu.ait.maral.fairshare.ui.navigation.LoginScreenKey
@@ -31,6 +32,7 @@ import hu.ait.maral.fairshare.ui.screen.room.RoomScreen
 import hu.ait.maral.fairshare.ui.screen.home.HomeScreen
 import hu.ait.maral.fairshare.ui.screen.notifications.NotificationsScreen
 import hu.ait.maral.fairshare.ui.screen.profile.ProfileScreen
+import hu.ait.maral.fairshare.ui.screen.start.AiBillReaderScreen
 import hu.ait.maral.fairshare.ui.screen.start.LoginScreen
 import hu.ait.maral.fairshare.ui.screen.start.SignUpScreen
 import hu.ait.maral.fairshare.ui.screen.start.SplashScreen
@@ -57,6 +59,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun NavGraph(modifier: Modifier) {
     val backStack = rememberNavBackStack(SplashScreenKey)
+    //val backStack = rememberNavBackStack(AiBillReaderScreenKey)
 
     NavDisplay(
         backStack = backStack,
@@ -121,6 +124,14 @@ fun NavGraph(modifier: Modifier) {
                     onBack = { backStack.removeLastOrNull() },
                     onUploadSuccess = { backStack.removeLastOrNull() })
             }
+
+            entry<AiBillReaderScreenKey> {
+                AiBillReaderScreen(
+                    onBack = { backStack.removeLastOrNull() },
+                    onUploadSuccess = { backStack.removeLastOrNull() }
+                )
+            }
+
         }
     )
 }

@@ -24,6 +24,12 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField(
+            "String",
+            "GEMINI_API_KEY",
+            "\"${project.properties["GEMINI_API_KEY"]}\""
+        )
     }
 
     buildTypes {
@@ -43,7 +49,7 @@ android {
         jvmTarget = "11"
     }
     buildFeatures {
-        compose = true
+        buildConfig = true
     }
 }
 
@@ -96,6 +102,9 @@ dependencies {
     implementation(libs.ktor.client.okhttp)
     implementation(libs.accompanist.permissions)
     implementation(libs.coil.compose)
+
+    implementation(libs.generativeai)
+    implementation(libs.androidx.ui.graphics)
     // adding for horizontal scrollable card! - maral
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.foundation:foundation-layout")

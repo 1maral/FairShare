@@ -7,6 +7,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import hu.ait.maral.fairshare.network.MoneyAPI
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -14,29 +15,30 @@ import retrofit2.Retrofit
 import javax.inject.Qualifier
 import javax.inject.Singleton
 
-
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class MoneyExchangeAPIHost
-
-
 
 @Module
 @InstallIn(SingletonComponent::class)
 object APIModule {
 
+    // Reusable Json instance
+    @OptIn(ExperimentalSerializationApi::class)
+    private val json: Json = Json { ignoreUnknownKeys = true }
+
     @Provides
     @MoneyExchangeAPIHost
     @Singleton
+    @OptIn(ExperimentalSerializationApi::class) // mark usage of experimental API
     fun provideMoneyAPIRetrofit(): Retrofit {
-        val client = OkHttpClient.Builder()
-            .build()
+        val client = OkHttpClient.Builder().build()
 
         return Retrofit.Builder()
             .baseUrl("https://data.fixer.io/")
             .addConverterFactory(
-                Json{ ignoreUnknownKeys = true }.asConverterFactory(
-                    "application/json".toMediaType()) )
+                json.asConverterFactory("application/json".toMediaType())
+            )
             .client(client)
             .build()
     }
@@ -46,6 +48,4 @@ object APIModule {
     fun provideMoneyAPI(@MoneyExchangeAPIHost retrofit: Retrofit): MoneyAPI {
         return retrofit.create(MoneyAPI::class.java)
     }
-
-
 }
