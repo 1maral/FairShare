@@ -192,26 +192,20 @@ fun RoomScreen(
                                         statusColor = Color.Gray
                                     }
 
-                                Box(
-                                    modifier = Modifier.clickable {
-                                        selectedPersonId = memberId
-                                        selectedPersonName = memberName
-                                        showPaymentDialog = true
+                                    Box(
+                                        modifier = Modifier.clickable {
+                                            selectedPersonId = memberId
+                                            selectedPersonName = memberName
+                                            showPaymentDialog = true
+                                        }
+                                    ) {
+                                        MemberBalanceCard(
+                                            name = memberName,
+                                            statusText = statusText,
+                                            statusColor = statusColor,
+                                            avatarUrl = avatarUrl
+                                        )
                                     }
-                                ) {
-                                    MemberBalanceCard(
-                                        name = memberName,
-                                        statusText = statusText,
-                                        statusColor = statusColor,
-                                        avatarUrl = avatarUrl
-                                    )
-                                }
-                                    MemberBalanceCard(
-                                        name = memberName,
-                                        statusText = statusText,
-                                        statusColor = statusColor,
-                                        avatarUrl = avatarUrl
-                                    )
                                 }
                             }
                         }
@@ -338,10 +332,6 @@ fun RoomScreen(
                                             "custom" -> customAmount.toDoubleOrNull() ?: 0.0
                                             else -> 0.0
                                         }
-
-                                        //------------------------------------------------------------------
-                                        //   THIS IS WHERE YOU CALL settleDebtWithMember
-                                        //------------------------------------------------------------------
 
                                         viewModel.settleDebtWithMember(
                                             groupId = groupId,
