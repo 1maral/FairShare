@@ -2,6 +2,7 @@ package hu.ait.maral.fairshare.ui.screen.home
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -407,8 +408,7 @@ fun GroupCard(
 
     Card(
         onClick = onClick,
-        modifier = modifier
-            .padding(vertical = 8.dp),
+        modifier = modifier.padding(vertical = 8.dp),
         elevation = cardElevation(6.dp),
         colors = cardColors(containerColor = Color(0xFFFFF0F5))
     ) {
@@ -423,13 +423,13 @@ fun GroupCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Row(
+            // ⭐ HORIZONTAL SCROLLABLE LIST OF MEMBERS
+            LazyRow(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                for (i in 0 until memberCount) {
+                items(memberCount) { i ->
                     Column(
-                        modifier = Modifier.weight(1f),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
@@ -460,21 +460,9 @@ fun GroupCard(
                                     .clip(CircleShape)
                             )
                         }
-                    }
-                }
-            }
 
-            Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(6.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                for (i in 0 until memberCount) {
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
                         Text(
                             text = "${currencyCode} ${formatAmount(group.memberBalances[i])}",
                             fontWeight = FontWeight.SemiBold,
