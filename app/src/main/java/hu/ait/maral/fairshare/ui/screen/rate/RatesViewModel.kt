@@ -15,7 +15,7 @@ class RatesViewModel @Inject constructor(
     private val moneyAPI: MoneyAPI
 ) : ViewModel() {
 
-    private val API_KEY = "969c37b5a73f8cb2d12c081dcbdc35e6"
+    private val API_KEY = "bd05fa7d810cb393b43997e989c42d3e"
 
     // 🔹 PUBLIC STATE THAT HOMESCREEN WILL READ
     var fxRates = mutableStateOf<FxRates?>(null)
