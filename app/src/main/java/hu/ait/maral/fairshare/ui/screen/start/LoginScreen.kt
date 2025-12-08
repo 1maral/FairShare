@@ -71,7 +71,7 @@ fun LoginScreen(
                 color = LogoGreen
             )
 
-            Spacer(modifier = Modifier.height(45.dp))  // space between text and logo
+            Spacer(modifier = Modifier.height(45.dp))
 
             Image(
                 painter = painterResource(id = R.drawable.logo),

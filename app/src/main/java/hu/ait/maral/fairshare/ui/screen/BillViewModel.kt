@@ -88,9 +88,7 @@ class BillViewModel : ViewModel() {
             }
     }
 
-    /**
-     * Uploads a bill image to Supabase, then creates the bill.
-     */
+
     @RequiresApi(Build.VERSION_CODES.P)
     fun uploadBillImage(
         groupId: String,
@@ -176,10 +174,7 @@ class BillViewModel : ViewModel() {
             }
     }
 
-    /**
-     * Updates group balances in Firestore after a bill is uploaded.
-     * "balances" is stored as Map<String, Double> in EUR.
-     */
+
     fun updateBalance(
         groupId: String,
         billItems: List<Item>,

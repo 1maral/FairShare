@@ -211,7 +211,6 @@ private fun MemberBalanceCard(
                     contentScale = ContentScale.Crop
                 )
             } else {
-                // Fallback: colored circle with initial
                 Surface(
                     shape = CircleShape,
                     color = ButtonGreen.copy(alpha = 0.2f),
@@ -243,9 +242,7 @@ private fun MemberBalanceCard(
     }
 }
 
-/**
- * Convert amount from EUR to the user's preferred currency using FxRates.
- */
+
 private fun convertAmount(
     amountEur: Double,
     userCurrency: String,
@@ -256,9 +253,7 @@ private fun convertAmount(
     return amountEur * rate
 }
 
-/**
- * Format amounts nicely (2 decimal places).
- */
+
 private fun formatAmount(amount: Double): String {
     return String.format("%.2f", amount)
 }
