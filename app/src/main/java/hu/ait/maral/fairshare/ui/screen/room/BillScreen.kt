@@ -1,5 +1,6 @@
-package hu.ait.maral.fairshare.ui.screen
+package hu.ait.maral.fairshare.ui.screen.room
 
+import android.Manifest
 import android.net.Uri
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -19,7 +20,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -93,6 +93,7 @@ fun BillScreen(
         }
     }
 
+
     // ------------------------------
     // CAMERA LOGIC
     // ------------------------------
@@ -102,7 +103,7 @@ fun BillScreen(
         ActivityResultContracts.TakePicture()
     ) { success -> hasImage = success }
     val cameraPermissionState =
-        rememberPermissionState(android.Manifest.permission.CAMERA)
+        rememberPermissionState(Manifest.permission.CAMERA)
     fun takePhoto() {
         val uri = ComposeFileProvider.getImageUri(context)
         imageUri = uri

@@ -5,7 +5,6 @@ import androidx.lifecycle.ViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
-import hu.ait.maral.fairshare.data.Bill
 import hu.ait.maral.fairshare.data.Group
 import hu.ait.maral.fairshare.data.User
 
@@ -31,12 +30,6 @@ class RoomViewModel : ViewModel() {
     private val auth = FirebaseAuth.getInstance()
 
     private var groupListener: ListenerRegistration? = null
-
-    var bills = mutableStateOf<List<Bill>>(emptyList())
-        private set
-
-    private var billsListener: ListenerRegistration? = null
-
 
     val currentUserId: String?
         get() = auth.currentUser?.uid
@@ -176,7 +169,16 @@ class RoomViewModel : ViewModel() {
     override fun onCleared() {
         super.onCleared()
         groupListener?.remove()
-        billsListener?.remove()
     }
 
+    fun fetchUserAvatar(uid: String, callback: (String?) -> Unit) {
+        db.collection("users").document(uid).get()
+            .addOnSuccessListener { snap ->
+                val url = snap.getString("profilePictureUrl")
+                callback(url)
+            }
+            .addOnFailureListener {
+                callback(null)
+            }
+    }
 }

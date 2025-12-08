@@ -1,4 +1,4 @@
-package hu.ait.maral.fairshare.ui.screen
+package hu.ait.maral.fairshare.ui.screen.room
 
 import android.content.ContentResolver
 import android.content.Context
@@ -17,6 +17,7 @@ import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.FirebaseFirestore
+import hu.ait.maral.fairshare.R
 import hu.ait.maral.fairshare.data.Bill
 import hu.ait.maral.fairshare.data.Item
 import hu.ait.maral.fairshare.data.SplitMethod
@@ -88,9 +89,7 @@ class BillViewModel : ViewModel() {
             }
     }
 
-    /**
-     * Uploads a bill image to Supabase, then creates the bill.
-     */
+
     @RequiresApi(Build.VERSION_CODES.P)
     fun uploadBillImage(
         groupId: String,
@@ -176,10 +175,7 @@ class BillViewModel : ViewModel() {
             }
     }
 
-    /**
-     * Updates group balances in Firestore after a bill is uploaded.
-     * "balances" is stored as Map<String, Double> in EUR.
-     */
+
     fun updateBalance(
         groupId: String,
         billItems: List<Item>,
@@ -253,7 +249,7 @@ class BillViewModel : ViewModel() {
  * Separate FileProvider used for image Uris (camera/gallery).
  */
 class ComposeFileProvider : FileProvider(
-    hu.ait.maral.fairshare.R.xml.filepaths
+    R.xml.filepaths
 ) {
     companion object {
         fun getImageUri(context: Context): Uri {
@@ -265,7 +261,7 @@ class ComposeFileProvider : FileProvider(
                 directory,
             )
             val authority = context.packageName + ".fileprovider"
-            return FileProvider.getUriForFile(
+            return getUriForFile(
                 context,
                 authority,
                 file,
