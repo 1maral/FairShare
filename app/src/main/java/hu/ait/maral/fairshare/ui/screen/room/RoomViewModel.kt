@@ -128,44 +128,6 @@ class RoomViewModel : ViewModel() {
 
         return result
     }
-
-    fun getBills(groupId: String): List<Bill> {
-        if (groupId.isBlank()) {
-            errorMessage.value = "Invalid group ID for bills."
-            return emptyList()
-        }
-
-        // Remove previous listener
-        billsListener?.remove()
-
-        isLoading.value = true
-        errorMessage.value = null
-
-        billsListener = db.collection("bills")
-            .whereEqualTo("groupId", groupId)
-            .addSnapshotListener { snapshot, e ->
-                if (e != null) {
-                    errorMessage.value = "Error loading bills: ${e.message}"
-                    isLoading.value = false
-                    return@addSnapshotListener
-                }
-
-                if (snapshot != null) {
-                    val list = snapshot.documents.mapNotNull { doc ->
-                        val bill = doc.toObject(Bill::class.java)
-                        bill?.copy(billId = doc.id)
-                    }
-
-                    // Sort newest → oldest by billDate
-                    bills.value = list.sortedByDescending { it.billDate }
-                }
-
-                isLoading.value = false
-            }
-
-        return bills.value
-    }
-
     override fun onCleared() {
         super.onCleared()
         groupListener?.remove()
