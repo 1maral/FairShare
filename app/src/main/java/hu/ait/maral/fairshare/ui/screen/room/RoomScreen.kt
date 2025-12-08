@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
@@ -14,13 +15,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import hu.ait.maral.fairshare.data.Bill
 import hu.ait.maral.fairshare.data.FxRates
-import hu.ait.maral.fairshare.ui.screen.room.RoomViewModel
+import hu.ait.maral.fairshare.data.Group
+import hu.ait.maral.fairshare.ui.screen.RoomViewModel
 import hu.ait.maral.fairshare.ui.screen.rate.RatesViewModel
 import hu.ait.maral.fairshare.ui.theme.BackgroundPink
 import hu.ait.maral.fairshare.ui.theme.ButtonGreen
@@ -178,6 +183,91 @@ fun RoomScreen(
         }
     }
 }
+
+@Composable
+fun BillCard(
+    bill: Bill,
+    groupState: Group,
+    preferredCurrency: String,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        modifier = modifier,
+        colors = CardDefaults.cardColors(
+            containerColor = BackgroundPink.copy(alpha = 0.2f)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+
+            Text(
+                text = bill.billTitle,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = ButtonGreen
+            )
+
+            Spacer(Modifier.height(4.dp))
+
+            val authorName = remember(bill.authorId, groupState) {
+                val idx = groupState.memberIds.indexOf(bill.authorId)
+                if (idx != -1) groupState.members[idx] else "Unknown"
+            }
+
+            Text(
+                text = "by $authorName",
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.Gray
+            )
+
+            Spacer(Modifier.height(8.dp))
+
+            if (bill.imgUrl.isNotEmpty()) {
+                AsyncImage(
+                    model = bill.imgUrl,
+                    contentDescription = "bill image",
+                    modifier = Modifier
+                        .size(90.dp)
+                        .align(Alignment.Start)
+                        .clip(RoundedCornerShape(8.dp)),
+                    contentScale = ContentScale.Crop
+                )
+                Spacer(Modifier.height(12.dp))
+            }
+
+            Column(modifier = Modifier.fillMaxWidth()) {
+                bill.billItems.forEach { item ->
+                    val assignedUserName = remember(item.itemId, bill.itemAssignments, groupState) {
+                        val assignedUserId = bill.itemAssignments[item.itemId]
+                        if (assignedUserId != null) {
+                            val idx = groupState.memberIds.indexOf(assignedUserId)
+                            if (idx != -1) groupState.members[idx] else "Unassigned"
+                        } else "Unassigned"
+                    }
+
+                    Text(
+                        text = "${item.itemName} — $assignedUserName: ${item.itemPrice} $preferredCurrency",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = ButtonGreen
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(14.dp))
+
+            Text(
+                text = "Total: ${bill.billItems.sumOf { it.itemPrice }} $preferredCurrency",
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp
+                ),
+                color = ButtonGreen
+            )
+        }
+    }
+}
+
 
 @Composable
 private fun MemberBalanceCard(

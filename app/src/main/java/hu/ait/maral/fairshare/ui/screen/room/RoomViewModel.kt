@@ -1,4 +1,4 @@
-package hu.ait.maral.fairshare.ui.screen.room
+package hu.ait.maral.fairshare.ui.screen
 
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -22,6 +22,7 @@ class RoomViewModel : ViewModel() {
     var errorMessage = mutableStateOf<String?>(null)
         private set
 
+    // Map<memberId, amountUserOwesThemInEur>
     var owedPerPerson = mutableStateOf<Map<String, Double>>(emptyMap())
         private set
 
@@ -33,13 +34,16 @@ class RoomViewModel : ViewModel() {
     val currentUserId: String?
         get() = auth.currentUser?.uid
 
-
+    /**
+     * Observe group document in real-time.
+     */
     fun observeGroup(groupId: String) {
         if (groupId.isBlank()) {
             errorMessage.value = "Invalid group id."
             return
         }
 
+        // Remove previous listener if any
         groupListener?.remove()
 
         isLoading.value = true
@@ -84,24 +88,34 @@ class RoomViewModel : ViewModel() {
         owedPerPerson.value = computeOwedPerPerson(g.balances, uid)
     }
 
-
+    /**
+     * Given group-level net balances (in EUR) and the current user,
+     * compute how much the user owes each other member.
+     *
+     * balances: Map<memberId, netBalanceInEur>
+     *   > 0  -> group owes this member
+     *   < 0  -> this member owes the group
+     */
     private fun computeOwedPerPerson(
         balances: Map<String, Double>,
         currentUserId: String
     ): Map<String, Double> {
         val userBalance = balances[currentUserId] ?: 0.0
 
+        // If the user isn't a debtor, they don't owe anyone.
         if (userBalance >= 0.0) return emptyMap()
 
-        var remainingDebt = -userBalance
+        var remainingDebt = -userBalance  // positive amount user must pay
         val result = mutableMapOf<String, Double>()
 
+        // Collect all creditors (people the group owes)
         val creditors = balances
             .filter { (memberId, balance) ->
                 memberId != currentUserId && balance > 0.0
             }
             .toList()
 
+        // Greedy: pay creditors in order until your debt is exhausted
         for ((creditorId, creditorBalance) in creditors) {
             if (remainingDebt <= 0.0) break
 
@@ -113,6 +127,43 @@ class RoomViewModel : ViewModel() {
         }
 
         return result
+    }
+
+    fun getBills(groupId: String): List<Bill> {
+        if (groupId.isBlank()) {
+            errorMessage.value = "Invalid group ID for bills."
+            return emptyList()
+        }
+
+        // Remove previous listener
+        billsListener?.remove()
+
+        isLoading.value = true
+        errorMessage.value = null
+
+        billsListener = db.collection("bills")
+            .whereEqualTo("groupId", groupId)
+            .addSnapshotListener { snapshot, e ->
+                if (e != null) {
+                    errorMessage.value = "Error loading bills: ${e.message}"
+                    isLoading.value = false
+                    return@addSnapshotListener
+                }
+
+                if (snapshot != null) {
+                    val list = snapshot.documents.mapNotNull { doc ->
+                        val bill = doc.toObject(Bill::class.java)
+                        bill?.copy(billId = doc.id)
+                    }
+
+                    // Sort newest → oldest by billDate
+                    bills.value = list.sortedByDescending { it.billDate }
+                }
+
+                isLoading.value = false
+            }
+
+        return bills.value
     }
 
     override fun onCleared() {

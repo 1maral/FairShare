@@ -96,4 +96,7 @@ dependencies {
     implementation(libs.ktor.client.okhttp)
     implementation(libs.accompanist.permissions)
     implementation(libs.coil.compose)
+    // adding for horizontal scrollable card! - maral
+    implementation("androidx.compose.foundation:foundation")
+    implementation("androidx.compose.foundation:foundation-layout")
 }
