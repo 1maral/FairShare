@@ -134,9 +134,12 @@ class RoomViewModel : ViewModel() {
 
         return result
     }
+<<<<<<< HEAD
 
 
 
+=======
+>>>>>>> 7deb1aca09b6d923f60f34e525a306bbc8ea37fd
     override fun onCleared() {
         super.onCleared()
         groupListener?.remove()
@@ -151,6 +154,7 @@ class RoomViewModel : ViewModel() {
             .addOnFailureListener {
                 callback(null)
             }
+<<<<<<< HEAD
     }
 
 
@@ -188,5 +192,7 @@ class RoomViewModel : ViewModel() {
 
                 isLoading.value = false
             }
+=======
+>>>>>>> 7deb1aca09b6d923f60f34e525a306bbc8ea37fd
     }
 }

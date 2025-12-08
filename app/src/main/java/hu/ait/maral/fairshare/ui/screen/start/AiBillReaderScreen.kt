@@ -1,8 +1,8 @@
 package hu.ait.maral.fairshare.ui.screen.start
 
-import hu.ait.maral.fairshare.ui.screen.BillUploadUiState
-import hu.ait.maral.fairshare.ui.screen.BillViewModel
-import hu.ait.maral.fairshare.ui.screen.ComposeFileProvider
+import hu.ait.maral.fairshare.ui.screen.room.BillUploadUiState
+import hu.ait.maral.fairshare.ui.screen.room.BillViewModel
+import hu.ait.maral.fairshare.ui.screen.room.ComposeFileProvider
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
