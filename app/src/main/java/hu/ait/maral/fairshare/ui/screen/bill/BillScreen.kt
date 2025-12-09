@@ -35,6 +35,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -46,6 +47,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -59,6 +61,10 @@ import hu.ait.maral.fairshare.data.Item
 import hu.ait.maral.fairshare.data.SplitMethod
 import hu.ait.maral.fairshare.ui.screen.bill.ai.AiBillReaderViewModel
 import hu.ait.maral.fairshare.ui.screen.bill.ai.AiBillUiState
+import hu.ait.maral.fairshare.ui.theme.BackgroundPink
+import hu.ait.maral.fairshare.ui.theme.ButtonGreen
+import hu.ait.maral.fairshare.ui.theme.CardPink
+import hu.ait.maral.fairshare.ui.theme.LogoGreen
 
 @OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterial3Api::class)
 @RequiresApi(Build.VERSION_CODES.P)
@@ -132,14 +138,21 @@ fun BillScreen(
     // LAYOUT
     // ------------------------------
     Scaffold(
+        containerColor = BackgroundPink,
         topBar = {
             TopAppBar(
-                title = { Text("Create Bill") },
+                title = { Text(
+                    text = "Create Bill",
+                    color = LogoGreen
+                ) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = ButtonGreen
+                )
             )
         }
     ) { paddingValues ->
@@ -153,7 +166,7 @@ fun BillScreen(
                 OutlinedTextField(
                     value = billTitle,
                     onValueChange = { billTitle = it },
-                    label = { Text("Bill Title") },
+                    label = { Text(text = "Bill Title", color = LogoGreen) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(Modifier.height(16.dp))
@@ -161,11 +174,12 @@ fun BillScreen(
 
             // Currency Dropdown
             item {
-                Text("Currency")
+                Text("Currency", color = Color(0xFFE76F8E))
                 Box {
                     OutlinedButton(
                         onClick = { currencyExpanded = true },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors( containerColor = Color(0xFFE76F8E), contentColor = Color(0xFFFFFFFF))
                     ) { Text(selectedCurrency) }
                     DropdownMenu(
                         expanded = currencyExpanded,
@@ -173,7 +187,7 @@ fun BillScreen(
                     ) {
                         currencyOptions.forEach { currency ->
                             DropdownMenuItem(
-                                text = { Text(currency) },
+                                text = { Text(currency, color = Color(0xFFE76F8E)) },
                                 onClick = {
                                     selectedCurrency = currency
                                     currencyExpanded = false
@@ -187,9 +201,9 @@ fun BillScreen(
 
             // Camera Section
             item {
-                Text("Bill Photo")
+                Text("Bill Photo", color = Color(0xFFE76F8E))
                 if (cameraPermissionState.status.isGranted) {
-                    Button(onClick = { takePhoto() }) { Text("Take Photo") }
+                    Button(onClick = { takePhoto() }, colors = androidx.compose.material3.ButtonDefaults.buttonColors(Color(0xFFE76F8E))) { Text("Take Photo") }
                 } else {
                     Column {
                         val text = if (cameraPermissionState.status.shouldShowRationale)
@@ -216,26 +230,26 @@ fun BillScreen(
 
             // Split Method Dropdown
             item {
-                Text("Split Method")
+                Text("Split Method", color = Color(0xFFE76F8E))
                 var splitExpanded by remember { mutableStateOf(false) }
                 Box {
                     OutlinedButton(
                         onClick = { splitExpanded = true },
                         modifier = Modifier.fillMaxWidth()
-                    ) { Text(splitMethod.name.lowercase().replaceFirstChar { it.uppercase() }) }
+                    ) { Text(splitMethod.name.lowercase().replaceFirstChar { it.uppercase() }, color = Color(0xFFE76F8E)) }
                     DropdownMenu(
                         expanded = splitExpanded,
                         onDismissRequest = { splitExpanded = false }
                     ) {
                         DropdownMenuItem(
-                            text = { Text("Equal") },
+                            text = { Text("Equal", color = Color(0xFFE76F8E)) },
                             onClick = {
                                 splitMethod = SplitMethod.EQUAL
                                 splitExpanded = false
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("By Item") },
+                            text = { Text("By Item", color = Color(0xFFE76F8E)) },
                             onClick = {
                                 splitMethod = SplitMethod.BY_ITEM
                                 splitExpanded = false
@@ -264,7 +278,7 @@ fun BillScreen(
                     OutlinedTextField(
                         value = totalPrice,
                         onValueChange = { totalPrice = it },
-                        label = { Text("Total Price ($selectedCurrency)") },
+                        label = { Text("Total Price ($selectedCurrency)", color = LogoGreen) },
                         modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(Modifier.height(24.dp))
@@ -324,7 +338,7 @@ fun BillScreen(
                                 // Assign dropdown button
                                 Box {
                                     OutlinedButton(onClick = { expanded = true }) {
-                                        Text(assignedName)
+                                        Text(assignedName, color = Color(0xFFE76F8E))
                                     }
                                     DropdownMenu(
                                         expanded = expanded,
@@ -332,7 +346,7 @@ fun BillScreen(
                                     ) {
                                         members.forEach { (uid, name) ->
                                             DropdownMenuItem(
-                                                text = { Text(name) },
+                                                text = { Text(name, color = Color(0xFFE76F8E)) },
                                                 onClick = {
                                                     itemAssignments[item.itemId] = uid
                                                     expanded = false
@@ -346,8 +360,11 @@ fun BillScreen(
                                 Button(onClick = {
                                     allItems.removeAt(index)
                                     itemAssignments.remove(item.itemId)
-                                }) {
-                                    Text("Delete")
+                                }, colors = androidx.compose.material3.ButtonDefaults.buttonColors(Color(
+                                    0xFFFF3030
+                                )
+                                )) {
+                                    Text("Delete", color = Color(0xFFFFFFFF))
                                 }
                             }
                         }
@@ -389,7 +406,7 @@ fun BillScreen(
 
                     Box {
                         OutlinedButton(onClick = { memberDropdownExpanded = true }) {
-                            Text(selectedUserName)
+                            Text(selectedUserName, color = Color(0xFFE76F8E))
                         }
                         DropdownMenu(
                             expanded = memberDropdownExpanded,
@@ -397,7 +414,7 @@ fun BillScreen(
                         ) {
                             members.forEach { (uid, name) ->
                                 DropdownMenuItem(
-                                    text = { Text(name) },
+                                    text = { Text(name, color = Color(0xFFE76F8E)) },
                                     onClick = {
                                         selectedUserId = uid
                                         selectedUserName = name
@@ -424,12 +441,12 @@ fun BillScreen(
                             selectedUserId = null
                             selectedUserName = "Assign to..."
                         }
-                    }) {
+                    }, colors = androidx.compose.material3.ButtonDefaults.buttonColors(Color(0xFFE76F8E))) {
                         Text("Add Item")
                     }
                     Spacer(Modifier.height(16.dp))
                 }
-                //changed billItems to allItems
+
                 items(allItems) { item ->
                     Row(
                         Modifier.fillMaxWidth(),
@@ -447,7 +464,8 @@ fun BillScreen(
 
             // Save Bill button + progress messages
             item {
-                Button(onClick = {
+                Button(
+                    onClick = {
                     val finalItems =
                         if (splitMethod == SplitMethod.EQUAL) {
                             val total = totalPrice.toDoubleOrNull() ?: 0.0
@@ -480,7 +498,9 @@ fun BillScreen(
                             )
                         }
                     }
-                }, modifier = Modifier.fillMaxWidth()) {
+                }, modifier = Modifier.fillMaxWidth()
+                , colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = LogoGreen)
+                ) {
                     Text("Save Bill")
                 }
 
