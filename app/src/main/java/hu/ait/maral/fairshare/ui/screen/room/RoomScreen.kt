@@ -371,7 +371,6 @@ fun BillCard(
 )
  {
 
-    fun Double.round2(): Double = kotlin.math.round(this * 100) / 100
 
     Card(
         shape = RoundedCornerShape(20.dp),
@@ -515,7 +514,7 @@ fun BillCard(
                     color = Color.Red
                 )
                 Text(
-                    text = "${convertAmount((bill.billItems.sumOf { it.itemPrice }).round2(), preferredCurrency, fxRates)} $preferredCurrency",
+                    text = "${convertAmount((bill.billItems.sumOf { it.itemPrice }), preferredCurrency, fxRates)} $preferredCurrency",
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 18.sp
@@ -606,8 +605,10 @@ private fun convertAmount(
 ): Double {
     if (fxRates == null) return amountEur
     val rate = fxRates.rates[userCurrency] ?: 1.0
-    return amountEur * rate
+    return (amountEur * rate).round2()
 }
+
+fun Double.round2(): Double = kotlin.math.round(this * 100) / 100
 
 private fun formatAmount(amount: Double): String {
     return String.format("%.2f", amount)
