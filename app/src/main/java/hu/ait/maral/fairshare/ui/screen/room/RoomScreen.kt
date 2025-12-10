@@ -370,6 +370,9 @@ fun BillCard(
     modifier: Modifier = Modifier
 )
  {
+
+    fun Double.round2(): Double = kotlin.math.round(this * 100) / 100
+
     Card(
         shape = RoundedCornerShape(20.dp),
         modifier = modifier
@@ -512,7 +515,7 @@ fun BillCard(
                     color = Color.Red
                 )
                 Text(
-                    text = "${convertAmount((bill.billItems.sumOf { it.itemPrice }), preferredCurrency, fxRates)} $preferredCurrency",
+                    text = "${convertAmount((bill.billItems.sumOf { it.itemPrice }).round2(), preferredCurrency, fxRates)} $preferredCurrency",
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 18.sp
