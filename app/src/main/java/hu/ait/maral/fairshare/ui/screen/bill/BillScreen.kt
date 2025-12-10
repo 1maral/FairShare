@@ -4,6 +4,7 @@ import android.graphics.BitmapFactory
 import android.Manifest
 import android.net.Uri
 import android.os.Build
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
@@ -56,6 +57,8 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.shouldShowRationale
+import hu.ait.maral.fairshare.BuildConfig
+import hu.ait.maral.fairshare.BuildConfig.GEMINI_API_KEY
 import hu.ait.maral.fairshare.R
 import hu.ait.maral.fairshare.data.Item
 import hu.ait.maral.fairshare.data.SplitMethod
@@ -82,7 +85,7 @@ fun BillScreen(
     val aiUiState by aiVm.uiState.collectAsState()
 
     //var editableAiItems by remember { mutableStateOf(mutableListOf<Item>()) }
-    val allItems = remember { mutableStateListOf<Item>() }
+    var allItems = remember { mutableStateListOf<Item>() }
 
     LaunchedEffect(aiItems) {
         // editableAiItems = aiItems.toMutableList()
