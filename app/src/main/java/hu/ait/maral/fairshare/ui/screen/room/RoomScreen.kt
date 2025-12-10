@@ -488,7 +488,7 @@ fun BillCard(
                             color = CardPink
                         )
                         Text(
-                            text = "$assignedUserName: ${convertAmount(item.itemPrice, preferredCurrency,fxRates)} $preferredCurrency",
+                            text = "$assignedUserName: ${convertAndFormatAmount(item.itemPrice, preferredCurrency, fxRates)}",
                             style = MaterialTheme.typography.bodySmall,
                             color = Color.Gray
                         )
@@ -516,15 +516,7 @@ fun BillCard(
                     color = Color.Red
                 )
                 Text(
-                    text = String.format(
-                        "%.2f %s",
-                        convertAmount(
-                            bill.billItems.sumOf { it.itemPrice },
-                            preferredCurrency,
-                            fxRates
-                        ),
-                        preferredCurrency
-                    ),
+                    text = convertAndFormatAmount(bill.billItems.sumOf { it.itemPrice }, preferredCurrency, fxRates),
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 18.sp
@@ -622,4 +614,16 @@ fun Double.round2(): Double = kotlin.math.round(this * 100) / 100
 
 private fun formatAmount(amount: Double): String {
     return String.format("%.2f", amount)
+}
+
+private fun convertAndFormatAmount(amount: Double, preferredCurrency: String, fxRates: FxRates?): String {
+    return String.format(
+        "%.2f %s",
+        convertAmount(
+            amount,
+            preferredCurrency,
+            fxRates
+        ),
+        preferredCurrency
+    )
 }

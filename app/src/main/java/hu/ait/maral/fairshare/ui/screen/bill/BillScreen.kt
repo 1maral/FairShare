@@ -270,7 +270,7 @@ fun BillScreen(
                         onClick = { splitExpanded = true },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(text = if (splitMethod == SplitMethod.BY_ITEM) "By item" else "Equal",
+                        Text(text = if (splitMethod == SplitMethod.BY_ITEM) "By Item" else "Equal",
                             color = Color(0xFFE76F8E))
                     }
                     DropdownMenu(
@@ -368,7 +368,7 @@ fun BillScreen(
                             var expanded by remember { mutableStateOf(false) }
                             var assignedId = itemAssignments[item.itemId]
                             var assignedName =
-                                members.find { it.first == assignedId }?.second ?: "Assign to..."
+                                members.find { it.first == assignedId }?.second ?: "Assign to"
 
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 // Assign dropdown button
@@ -465,24 +465,23 @@ fun BillScreen(
                                 }
                         }
                     }
+                    val isFormValid = newItemName.isNotBlank() &&
+                            (newItemPrice.toDoubleOrNull() != null) &&
+                            selectedUserId != null
 
                     Button(onClick = {
-                        val price = newItemPrice.toDoubleOrNull()
-                        if (newItemName.isNotBlank() &&
-                            price != null &&
-                            selectedUserId != null
-                        ) {
-                            val item = Item(newItemName, price)
-                            //billItems.add(item)
-                            allItems.add(item)
-                            itemAssignments[item.itemId] = selectedUserId!!
+                        val price = newItemPrice.toDoubleOrNull() ?: return@Button
 
-                            newItemName = ""
-                            newItemPrice = ""
-                            selectedUserId = null
-                            selectedUserName = "Assign to..."
-                        }
-                    }, colors = androidx.compose.material3.ButtonDefaults.buttonColors(Color(0xFFE76F8E))) {
+                        val item = Item(newItemName, price)
+                        allItems.add(item)
+                        itemAssignments[item.itemId] = selectedUserId!!
+
+                        newItemName = ""
+                        newItemPrice = ""
+                        selectedUserId = null
+                        selectedUserName = "Assign to"
+                    }, enabled = isFormValid,
+                        colors = androidx.compose.material3.ButtonDefaults.buttonColors(Color(0xFFE76F8E))) {
                         Text("Add Item")
                     }
                     Spacer(Modifier.height(16.dp))
@@ -507,6 +506,13 @@ fun BillScreen(
             item {
                 Button(
                     onClick = {
+                        // Require at least 1 item when using BY_ITEM
+                        if (splitMethod == SplitMethod.BY_ITEM && allItems.isEmpty()) {
+                            errorMessage = "Please add at least one item before saving."
+                            return@Button
+                        }
+
+                        // Require all items to be assigned
                         if (splitMethod == SplitMethod.BY_ITEM) {
                             val unassignedItems = allItems.filter { itemAssignments[it.itemId] == null }
                             if (unassignedItems.isNotEmpty()) {
