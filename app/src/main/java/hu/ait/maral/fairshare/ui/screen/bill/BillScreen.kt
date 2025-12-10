@@ -79,8 +79,7 @@ fun BillScreen(
     groupId: String,
     ratesViewModel: RatesViewModel = hiltViewModel(),
     viewModel: BillViewModel = viewModel(),
-    onBack: () -> Unit,
-    onUploadSuccess: () -> Unit
+    onBack: () -> Unit
 ) {
     val context = LocalContext.current
     // --- AI Scanner dependencies ---
@@ -271,7 +270,7 @@ fun BillScreen(
                         onClick = { splitExpanded = true },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(text = if (splitMethod == SplitMethod.BY_ITEM) "By items" else "Equally",
+                        Text(text = if (splitMethod == SplitMethod.BY_ITEM) "By item" else "Equal",
                             color = Color(0xFFE76F8E))
                     }
                     DropdownMenu(
