@@ -1,3 +1,6 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -11,7 +14,12 @@ plugins {
     alias(libs.plugins.hilt.gradle)
 
 }
-
+val localProps: Properties = Properties()
+if (project.rootProject.file("key.properties").canRead()) {
+    localProps.load(FileInputStream(project.rootProject.file("key.properties")))
+} else {
+    System.err.println("key.properties file is missing, please create it.")
+}
 android {
     namespace = "hu.ait.maral.fairshare"
     compileSdk = 36
@@ -25,11 +33,8 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField(
-            "String",
-            "GEMINI_API_KEY",
-            "\"${project.properties["GEMINI_API_KEY"]}\""
-        )
+        buildConfigField("String", "GEMINI_API_KEY", "\"" + localProps["gemini.apikey"] + "\"")
+        buildConfigField("String", "MONEY_API_KEY", "\"" + localProps["money.apikey"] + "\"")
     }
 
     buildTypes {
@@ -49,6 +54,7 @@ android {
         jvmTarget = "11"
     }
     buildFeatures {
+        compose = true
         buildConfig = true
     }
 }

@@ -17,6 +17,7 @@ import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.FirebaseFirestore
+import hu.ait.maral.fairshare.BuildConfig.GEMINI_API_KEY
 import hu.ait.maral.fairshare.data.Bill
 import hu.ait.maral.fairshare.data.Item
 import hu.ait.maral.fairshare.data.SplitMethod
@@ -57,7 +58,7 @@ class AiBillReaderViewModel : ViewModel() {
     // -----------------------
     private val genModel = GenerativeModel(
         modelName = "gemini-2.5-flash",
-        apiKey = "AIzaSyDjqgKerqnjD_Z7QZ2pxDYiBwYI4rq9cOI",
+        apiKey = GEMINI_API_KEY,
         safetySettings = listOf(
             SafetySetting(
                 HarmCategory.HARASSMENT,
