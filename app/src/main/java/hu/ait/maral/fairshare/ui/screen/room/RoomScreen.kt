@@ -240,6 +240,7 @@ fun RoomScreen(
                                         bill = bill,
                                         groupState = groupState,
                                         preferredCurrency = preferredCurrency,
+                                        fxRates = fxRates,
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .padding(horizontal = 8.dp)
@@ -365,8 +366,10 @@ fun BillCard(
     bill: Bill,
     groupState: Group,
     preferredCurrency: String,
+    fxRates: FxRates?,
     modifier: Modifier = Modifier
-) {
+)
+ {
     Card(
         shape = RoundedCornerShape(20.dp),
         modifier = modifier
@@ -509,7 +512,7 @@ fun BillCard(
                     color = Color.Red
                 )
                 Text(
-                    text = "${bill.billItems.sumOf { it.itemPrice }} $preferredCurrency",
+                    text = "${convertAmount((bill.billItems.sumOf { it.itemPrice }), preferredCurrency, fxRates)} $preferredCurrency",
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 18.sp

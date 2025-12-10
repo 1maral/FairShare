@@ -51,6 +51,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
@@ -64,6 +65,7 @@ import hu.ait.maral.fairshare.data.Item
 import hu.ait.maral.fairshare.data.SplitMethod
 import hu.ait.maral.fairshare.ui.screen.bill.ai.AiBillReaderViewModel
 import hu.ait.maral.fairshare.ui.screen.bill.ai.AiBillUiState
+import hu.ait.maral.fairshare.ui.screen.rate.RatesViewModel
 import hu.ait.maral.fairshare.ui.theme.BackgroundPink
 import hu.ait.maral.fairshare.ui.theme.ButtonGreen
 import hu.ait.maral.fairshare.ui.theme.CardPink
@@ -74,6 +76,7 @@ import hu.ait.maral.fairshare.ui.theme.LogoGreen
 @Composable
 fun BillScreen(
     groupId: String,
+    ratesViewModel: RatesViewModel = hiltViewModel(),
     viewModel: BillViewModel = viewModel(),
     onBack: () -> Unit,
     onUploadSuccess: () -> Unit
@@ -120,6 +123,8 @@ fun BillScreen(
         }
     }
 
+    val fxRatesState by ratesViewModel.fxRates
+
 
     // ------------------------------
     // CAMERA LOGIC
@@ -136,6 +141,28 @@ fun BillScreen(
         imageUri = uri
         cameraLauncher.launch(uri)
     }
+
+    fun Double.round2(): Double = kotlin.math.round(this * 100) / 100
+
+
+
+    fun convertToEur(amount: Double): Double {
+        val fx = fxRatesState
+        val ratesMap = fx?.rates
+
+        // If we don't have rates yet or EUR is selected, don't convert
+        if (fx == null || ratesMap == null || selectedCurrency == "EUR") {
+            return amount
+        }
+
+        val rateForSelected = ratesMap[selectedCurrency] ?: return amount
+
+        // Assuming rates are "1 EUR = rateForSelected <selectedCurrency>".
+        // So: amount_in_EUR = amount_in_selected / rateForSelected.
+        return (amount / rateForSelected).round2()
+    }
+
+
 
     // ------------------------------
     // LAYOUT
@@ -477,12 +504,16 @@ fun BillScreen(
                             allItems
                         }
 
+                        val finalItemsInEur = finalItems.map { item ->
+                            item.copy(itemPrice = convertToEur(item.itemPrice))
+                        }
+
                     if (imageUri == null) {
                         viewModel.uploadBill(
-                            groupId, billTitle, finalItems, itemAssignments, splitMethod
+                            groupId, billTitle, finalItemsInEur, itemAssignments, splitMethod
                         ) {
                             viewModel.updateBalance(
-                                groupId, finalItems, itemAssignments, splitMethod
+                                groupId, finalItemsInEur, itemAssignments, splitMethod
                             )
                             onUploadSuccess()
                         }
@@ -492,12 +523,12 @@ fun BillScreen(
                             context.contentResolver,
                             imageUri!!,
                             billTitle,
-                            finalItems,
+                            finalItemsInEur,
                             itemAssignments,
                             splitMethod
                         ) {
                             viewModel.updateBalance(
-                                groupId, finalItems, itemAssignments, splitMethod
+                                groupId, finalItemsInEur, itemAssignments, splitMethod
                             )
                         }
                     }
@@ -533,6 +564,8 @@ fun BillScreen(
         }
     }
 }
+
+
 
 
 
