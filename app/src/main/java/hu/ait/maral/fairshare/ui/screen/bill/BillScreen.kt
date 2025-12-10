@@ -266,7 +266,10 @@ fun BillScreen(
                     OutlinedButton(
                         onClick = { splitExpanded = true },
                         modifier = Modifier.fillMaxWidth()
-                    ) { Text(splitMethod.name.lowercase().replaceFirstChar { it.uppercase() }, color = Color(0xFFE76F8E)) }
+                    ) {
+                        Text(text = if (splitMethod == SplitMethod.BY_ITEM) "By items" else "Equally",
+                            color = Color(0xFFE76F8E))
+                    }
                     DropdownMenu(
                         expanded = splitExpanded,
                         onDismissRequest = { splitExpanded = false }
@@ -546,6 +549,7 @@ fun BillScreen(
 
                     is BillUploadUiState.BillUploadSuccess -> {
                         Text("Bill saved successfully!")
+                        onUploadSuccess()
                     }
                     is BillUploadUiState.ImageUploadSuccess -> {
                         Text("Bill Image saved successfully!")

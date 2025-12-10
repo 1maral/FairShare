@@ -516,7 +516,15 @@ fun BillCard(
                     color = Color.Red
                 )
                 Text(
-                    text = "${convertAmount((bill.billItems.sumOf { it.itemPrice }), preferredCurrency, fxRates)} $preferredCurrency",
+                    text = String.format(
+                        "%.2f %s",
+                        convertAmount(
+                            bill.billItems.sumOf { it.itemPrice },
+                            preferredCurrency,
+                            fxRates
+                        ),
+                        preferredCurrency
+                    ),
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 18.sp
