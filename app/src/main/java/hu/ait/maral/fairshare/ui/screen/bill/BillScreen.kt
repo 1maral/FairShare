@@ -58,6 +58,7 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.shouldShowRationale
+import com.google.firebase.auth.FirebaseAuth
 import hu.ait.maral.fairshare.BuildConfig
 import hu.ait.maral.fairshare.BuildConfig.GEMINI_API_KEY
 import hu.ait.maral.fairshare.R
@@ -99,6 +100,8 @@ fun BillScreen(
     // ------------------------------
     //  STATE
     // ------------------------------
+    val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+
     var billTitle by remember { mutableStateOf("") }
     var totalPrice by remember { mutableStateOf("") }
     var newItemName by remember { mutableStateOf("") }
@@ -124,6 +127,7 @@ fun BillScreen(
     }
 
     val fxRatesState by ratesViewModel.fxRates
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
 
     // ------------------------------
@@ -377,16 +381,19 @@ fun BillScreen(
                                         expanded = expanded,
                                         onDismissRequest = { expanded = false }
                                     ) {
-                                        members.forEach { (uid, name) ->
-                                            DropdownMenuItem(
-                                                text = { Text(name, color = Color(0xFFE76F8E)) },
-                                                onClick = {
-                                                    itemAssignments[item.itemId] = uid
-                                                    expanded = false
-                                                }
-                                            )
-                                        }
+                                        members
+                                            .filter { it.first != currentUserId }
+                                            .forEach { (uid, name) ->
+                                                DropdownMenuItem(
+                                                    text = { Text(name, color = Color(0xFFE76F8E)) },
+                                                    onClick = {
+                                                        itemAssignments[item.itemId] = uid
+                                                        expanded = false
+                                                    }
+                                                )
+                                            }
                                     }
+
                                 }
 
                                 // Delete button
@@ -445,16 +452,18 @@ fun BillScreen(
                             expanded = memberDropdownExpanded,
                             onDismissRequest = { memberDropdownExpanded = false }
                         ) {
-                            members.forEach { (uid, name) ->
-                                DropdownMenuItem(
-                                    text = { Text(name, color = Color(0xFFE76F8E)) },
-                                    onClick = {
-                                        selectedUserId = uid
-                                        selectedUserName = name
-                                        memberDropdownExpanded = false
-                                    }
-                                )
-                            }
+                            members
+                                .filter { it.first != currentUserId }
+                                .forEach { (uid, name) ->
+                                    DropdownMenuItem(
+                                        text = { Text(name, color = Color(0xFFE76F8E)) },
+                                        onClick = {
+                                            selectedUserId = uid
+                                            selectedUserName = name
+                                            memberDropdownExpanded = false
+                                        }
+                                    )
+                                }
                         }
                     }
 
@@ -499,42 +508,53 @@ fun BillScreen(
             item {
                 Button(
                     onClick = {
-                    val finalItems =
-                        if (splitMethod == SplitMethod.EQUAL) {
-                            val total = totalPrice.toDoubleOrNull() ?: 0.0
-                            listOf(Item("Total", total))
-                        } else {
-                            allItems
+                        if (splitMethod == SplitMethod.BY_ITEM) {
+                            val unassignedItems = allItems.filter { itemAssignments[it.itemId] == null }
+                            if (unassignedItems.isNotEmpty()) {
+                                errorMessage = "Please assign all items to a member before saving."
+                                return@Button
+                            }
                         }
+
+                        errorMessage = null
+
+                        val finalItems =
+                            if (splitMethod == SplitMethod.EQUAL) {
+                                val total = totalPrice.toDoubleOrNull() ?: 0.0
+                                listOf(Item("Total", total))
+                            } else {
+                                allItems
+                            }
 
                         val finalItemsInEur = finalItems.map { item ->
                             item.copy(itemPrice = convertToEur(item.itemPrice))
                         }
 
-                    if (imageUri == null) {
-                        viewModel.uploadBill(
-                            groupId, billTitle, finalItemsInEur, itemAssignments, splitMethod
-                        ) {
-                            viewModel.updateBalance(
-                                groupId, finalItemsInEur, itemAssignments, splitMethod
-                            )
+                        if (imageUri == null) {
+                            viewModel.uploadBill(
+                                groupId, billTitle, finalItemsInEur, itemAssignments, splitMethod
+                            ) {
+                                viewModel.updateBalance(
+                                    groupId, finalItemsInEur, itemAssignments, splitMethod
+                                )
+                            }
+                        } else {
+                            viewModel.uploadBillImage(
+                                groupId,
+                                context.contentResolver,
+                                imageUri!!,
+                                billTitle,
+                                finalItemsInEur,
+                                itemAssignments,
+                                splitMethod
+                            ) {
+                                viewModel.updateBalance(
+                                    groupId, finalItemsInEur, itemAssignments, splitMethod
+                                )
+                            }
                         }
-                    } else {
-                        viewModel.uploadBillImage(
-                            groupId,
-                            context.contentResolver,
-                            imageUri!!,
-                            billTitle,
-                            finalItemsInEur,
-                            itemAssignments,
-                            splitMethod
-                        ) {
-                            viewModel.updateBalance(
-                                groupId, finalItemsInEur, itemAssignments, splitMethod
-                            )
-                        }
-                    }
-                }, modifier = Modifier.fillMaxWidth()
+                    },
+                     modifier = Modifier.fillMaxWidth()
                 , colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = LogoGreen)
                 ) {
                     Text("Save Bill")
@@ -563,6 +583,12 @@ fun BillScreen(
 
                     else -> {}
                 }
+
+                errorMessage?.let {
+                    Spacer(Modifier.height(8.dp))
+                    Text(it, color = Color.Red)
+                }
+
 
             }
         }
