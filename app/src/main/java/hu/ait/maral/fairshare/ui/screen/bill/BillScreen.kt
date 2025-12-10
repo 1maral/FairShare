@@ -569,7 +569,6 @@ fun BillScreen(
 
                     is BillUploadUiState.BillUploadSuccess -> {
                         Text("Bill saved successfully!")
-                        onUploadSuccess()
                     }
                     is BillUploadUiState.ImageUploadSuccess -> {
                         Text("Bill Image saved successfully!")
