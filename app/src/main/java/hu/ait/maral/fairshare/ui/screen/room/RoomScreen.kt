@@ -487,7 +487,7 @@ fun BillCard(
                             color = CardPink
                         )
                         Text(
-                            text = "$assignedUserName: ${item.itemPrice} $preferredCurrency",
+                            text = "$assignedUserName: ${convertAmount(item.itemPrice, preferredCurrency,fxRates)} $preferredCurrency",
                             style = MaterialTheme.typography.bodySmall,
                             color = Color.Gray
                         )
