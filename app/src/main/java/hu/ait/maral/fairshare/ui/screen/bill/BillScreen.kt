@@ -431,7 +431,7 @@ fun BillScreen(
 
                 item {
                     var memberDropdownExpanded by remember { mutableStateOf(false) }
-                    var selectedUserName by remember { mutableStateOf("Assign to...") }
+                    var selectedUserName by remember { mutableStateOf("Assign to") }
                     var selectedUserId by remember { mutableStateOf<String?>(null) }
 
                     Box {
