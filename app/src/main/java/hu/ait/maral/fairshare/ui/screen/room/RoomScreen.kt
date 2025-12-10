@@ -264,7 +264,7 @@ fun RoomScreen(
 
                         AlertDialog(
                             onDismissRequest = { showPaymentDialog = false },
-                            title = { Text("Settle with $selectedPersonName") },
+                            title = { Text("Settle with $selectedPersonName", color = LogoGreen) },
                             text = {
                                 Column {
 
@@ -277,7 +277,7 @@ fun RoomScreen(
                                                 customAmount = formatAmount(convertedOwed)
                                             }
                                         )
-                                        Text("Owed: $preferredCurrency ${formatAmount(convertedOwed)}")
+                                        Text("Owed: $preferredCurrency ${formatAmount(convertedOwed)}", color = LogoGreen)
                                     }
 
                                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -292,7 +292,7 @@ fun RoomScreen(
                                                     customAmount = it
                                                 }
                                             },
-                                            label = { Text("Custom amount") },
+                                            label = { Text("Custom amount", color = LogoGreen) },
                                             singleLine = true,
                                             modifier = Modifier.width(160.dp)
                                         )
@@ -301,8 +301,9 @@ fun RoomScreen(
                                     Spacer(Modifier.height(12.dp))
 
                                     // ---- Payment Method ----
-                                    Text("Select Payment Method:")
-                                    val methods = listOf("Cash", "Revolut", "Bank", "Wise")
+                                    Text("Select Payment Method:", color = LogoGreen)
+
+                                    val methods = listOf("Cash", "Venmo", "Zelle", "CashApp", "PayPal", "Bank Transfer")
 
                                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                         items(methods.size) { i ->
@@ -317,7 +318,7 @@ fun RoomScreen(
                                                     .clickable { selectedPaymentMethod = m }
                                             ) {
                                                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                                    Text(m)
+                                                    Text(m, color = LogoGreen)
                                                 }
                                             }
                                         }
@@ -342,7 +343,8 @@ fun RoomScreen(
                                             onSuccess = { showPaymentDialog = false },
                                             onError = { viewModel.errorMessage.value = it }
                                         )
-                                    }
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = LogoGreen)
                                 ) {
                                     Text("Confirm Payment")
                                 }
@@ -350,7 +352,7 @@ fun RoomScreen(
 
                             dismissButton = {
                                 TextButton(onClick = { showPaymentDialog = false }) {
-                                    Text("Cancel")
+                                    Text("Cancel", color = Color.Black)
                                 }
                             }
                         )
