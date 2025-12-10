@@ -515,7 +515,6 @@ fun BillScreen(
                             viewModel.updateBalance(
                                 groupId, finalItemsInEur, itemAssignments, splitMethod
                             )
-                            onUploadSuccess()
                         }
                     } else {
                         viewModel.uploadBillImage(
@@ -545,9 +544,11 @@ fun BillScreen(
                     is BillUploadUiState.LoadingImageUpload ->
                         CircularProgressIndicator()
 
-                    is BillUploadUiState.BillUploadSuccess,
-                    is BillUploadUiState.ImageUploadSuccess -> {
+                    is BillUploadUiState.BillUploadSuccess -> {
                         Text("Bill saved successfully!")
+                    }
+                    is BillUploadUiState.ImageUploadSuccess -> {
+                        Text("Bill Image saved successfully!")
                     }
 
                     is BillUploadUiState.ErrorDuringBillUpload ->

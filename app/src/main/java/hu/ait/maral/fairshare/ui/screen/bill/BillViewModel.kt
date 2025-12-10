@@ -236,10 +236,10 @@ class BillViewModel : ViewModel() {
             tx.update(groupRef, "balances", newBalances)
         }
             .addOnFailureListener { e ->
-                println("❌ Balance update FAILED: ${e.message}")
+                println("Balance update FAILED: ${e.message}")
             }
             .addOnSuccessListener {
-                println("✅ Balance update SUCCESS")
+                println("Balance update SUCCESS")
             }
     }
 
