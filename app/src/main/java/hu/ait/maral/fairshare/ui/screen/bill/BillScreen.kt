@@ -547,8 +547,8 @@ fun BillScreen(
 
                     is BillUploadUiState.BillUploadSuccess,
                     is BillUploadUiState.ImageUploadSuccess -> {
-                        // Only show a message here instead of navigating
                         Text("Bill saved successfully!")
+                        onUploadSuccess()
                     }
 
                     is BillUploadUiState.ErrorDuringBillUpload ->
