@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -29,6 +30,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import hu.ait.maral.fairshare.R
 import hu.ait.maral.fairshare.data.Bill
 import hu.ait.maral.fairshare.data.FxRates
 import hu.ait.maral.fairshare.data.Group
@@ -78,7 +80,7 @@ fun RoomScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = groupState?.name ?: "Room",
+                        text = groupState?.name ?: stringResource(R.string.room),
                         color = LogoGreen
                     )
                 },
@@ -117,7 +119,7 @@ fun RoomScreen(
 
                 errorMessage != null -> {
                     Text(
-                        text = "Error: $errorMessage",
+                        text = stringResource(R.string.error, errorMessage),
                         color = MaterialTheme.colorScheme.error,
                         modifier = Modifier.align(Alignment.Center)
                     )
@@ -125,7 +127,7 @@ fun RoomScreen(
 
                 groupState == null || currentUserId.isBlank() -> {
                     Text(
-                        text = "No group data.",
+                        text = stringResource(R.string.no_group_data),
                         modifier = Modifier.align(Alignment.Center)
                     )
                 }
@@ -135,10 +137,9 @@ fun RoomScreen(
                             .fillMaxSize()
                             .padding(16.dp)
                     ) {
-                        // ---------------- GROUP BALANCES ----------------
                         item {
                             Text(
-                                text = "Group Balances",
+                                text = stringResource(R.string.group_balances),
                                 style = MaterialTheme.typography.titleMedium,
                                 color = LogoGreen,
                                 modifier = Modifier.padding(vertical = 2.dp)
@@ -150,7 +151,6 @@ fun RoomScreen(
                                 itemsIndexed(groupState.members) { index, memberName ->
                                     val memberId = groupState.memberIds.getOrNull(index)
 
-                                    // Skip if no memberId or if it's the current user
                                     if (memberId == null || memberId == currentUserId) {
                                         return@itemsIndexed
                                     }
@@ -210,12 +210,11 @@ fun RoomScreen(
                             }
                         }
 
-                        // ---------------- BILL RECEIPTS ----------------
                         item {
                             Spacer(modifier = Modifier.height(24.dp))
 
                             Text(
-                                text = "Bill Receipts",
+                                text = stringResource(R.string.bill_receipts),
                                 style = MaterialTheme.typography.titleMedium,
                                 color = LogoGreen,
                                 modifier = Modifier.padding(vertical = 8.dp)
@@ -223,7 +222,6 @@ fun RoomScreen(
                         }
 
                         item {
-                            // Pager for bills
                             val pagerState = rememberPagerState(pageCount = { bills.size })
 
                             if (bills.isNotEmpty()) {
@@ -231,11 +229,10 @@ fun RoomScreen(
                                     state = pagerState,
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .height(360.dp) // slightly taller to fit image + items comfortably
+                                        .height(360.dp)
                                 ) { page ->
                                     val bill = bills[page]
 
-                                    // Call our custom BillCard composable
                                     BillCard(
                                         bill = bill,
                                         groupState = groupState,
@@ -248,14 +245,13 @@ fun RoomScreen(
                                 }
                             } else {
                                 Text(
-                                    text = "No bills yet.",
+                                    text = stringResource(R.string.no_bills_yet),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = LogoGreen,
                                     modifier = Modifier.padding(8.dp)
                                 )
                             }
                         }
-
                     }
                     if (showPaymentDialog && selectedPersonId != null) {
 
@@ -267,8 +263,6 @@ fun RoomScreen(
                             title = { Text("Settle with $selectedPersonName", color = LogoGreen) },
                             text = {
                                 Column {
-
-                                    // ----- Amount Selection -----
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         RadioButton(
                                             selected = selectedAmountOption == "owed",
@@ -277,7 +271,12 @@ fun RoomScreen(
                                                 customAmount = formatAmount(convertedOwed)
                                             }
                                         )
-                                        Text("Owed: $preferredCurrency ${formatAmount(convertedOwed)}", color = LogoGreen)
+                                        Text(
+                                            stringResource(
+                                                R.string.owed,
+                                                preferredCurrency,
+                                                formatAmount(convertedOwed)
+                                            ), color = LogoGreen)
                                     }
 
                                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -292,7 +291,7 @@ fun RoomScreen(
                                                     customAmount = it
                                                 }
                                             },
-                                            label = { Text("Custom amount", color = LogoGreen) },
+                                            label = { Text(stringResource(R.string.custom_amount), color = LogoGreen) },
                                             singleLine = true,
                                             modifier = Modifier.width(160.dp)
                                         )
@@ -300,10 +299,15 @@ fun RoomScreen(
 
                                     Spacer(Modifier.height(12.dp))
 
-                                    // ---- Payment Method ----
-                                    Text("Select Payment Method:", color = LogoGreen)
+                                    Text(stringResource(R.string.select_payment_method), color = LogoGreen)
 
-                                    val methods = listOf("Cash", "Venmo", "Zelle", "CashApp", "PayPal", "Bank Transfer")
+                                    val methods = listOf(
+                                        stringResource(R.string.cash),
+                                        stringResource(R.string.venmo),
+                                        stringResource(R.string.zelle),
+                                        stringResource(R.string.cash_app),
+                                        stringResource(R.string.paypal),
+                                        stringResource(R.string.bank_transfer))
 
                                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                         items(methods.size) { i ->
@@ -346,13 +350,13 @@ fun RoomScreen(
                                     },
                                     colors = ButtonDefaults.buttonColors(containerColor = LogoGreen)
                                 ) {
-                                    Text("Confirm Payment")
+                                    Text(stringResource(R.string.confirm_payment))
                                 }
                             },
 
                             dismissButton = {
                                 TextButton(onClick = { showPaymentDialog = false }) {
-                                    Text("Cancel", color = Color.Black)
+                                    Text(stringResource(R.string.cancel), color = Color.Black)
                                 }
                             }
                         )
@@ -372,8 +376,6 @@ fun BillCard(
     modifier: Modifier = Modifier
 )
  {
-
-
     Card(
         shape = RoundedCornerShape(20.dp),
         modifier = modifier
@@ -404,16 +406,13 @@ fun BillCard(
             }
 
             Text(
-                text = "by $authorName",
+                text = stringResource(R.string.by, authorName),
                 style = MaterialTheme.typography.bodySmall,
                 color = Color.Gray
             )
 
             Spacer(Modifier.height(4.dp))
 
-            // -------------------
-            // IMAGE SECTION
-            // -------------------
             var showFullImage by remember { mutableStateOf(false) }
 
             if (bill.imgUrl.isNotEmpty()) {
@@ -428,7 +427,6 @@ fun BillCard(
                     contentScale = ContentScale.Crop
                 )
                 Spacer(Modifier.height(8.dp))
-                // Fullscreen image dialog
                 if (showFullImage) {
                     Dialog(onDismissRequest = { showFullImage = false }) {
                         Box(
@@ -451,10 +449,6 @@ fun BillCard(
                 }
             }
 
-
-            // -------------------
-            // ITEMS LIST
-            // -------------------
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -488,7 +482,11 @@ fun BillCard(
                             color = CardPink
                         )
                         Text(
-                            text = "$assignedUserName: ${convertAndFormatAmount(item.itemPrice, preferredCurrency, fxRates)}",
+                            text = stringResource(
+                                R.string.items_in_bill_post,
+                                assignedUserName,
+                                convertAndFormatAmount(item.itemPrice, preferredCurrency, fxRates)
+                            ),
                             style = MaterialTheme.typography.bodySmall,
                             color = Color.Gray
                         )
@@ -500,15 +498,12 @@ fun BillCard(
             Divider(color = Color.Gray.copy(alpha = 0.3f))
             Spacer(Modifier.height(4.dp))
 
-            // -------------------
-            // TOTAL ROW
-            // -------------------
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "Total",
+                    text = stringResource(R.string.total),
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold,
                         fontSize = 18.sp

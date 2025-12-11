@@ -51,9 +51,6 @@ class BillViewModel : ViewModel() {
 
     private val auth: FirebaseAuth = Firebase.auth
 
-    /**
-     * Uploads a bill without an image.
-     */
     fun uploadBill(
         groupId: String,
         title: String,
@@ -199,7 +196,6 @@ class BillViewModel : ViewModel() {
 
             val newBalances = existingBalances.toMutableMap()
 
-            // Ensure all members exist in the map
             members.forEach { uid ->
                 if (!newBalances.containsKey(uid)) newBalances[uid] = 0.0
             }
@@ -211,8 +207,6 @@ class BillViewModel : ViewModel() {
                 SplitMethod.EQUAL -> {
                     if (members.isNotEmpty()) {
                         val perPerson = total / members.size
-
-                        // ❗ Members owe money → NEGATIVE
                         members.forEach { uid ->
                             newBalances[uid] = (newBalances[uid] ?: 0.0) - perPerson
                         }
@@ -222,17 +216,12 @@ class BillViewModel : ViewModel() {
                 SplitMethod.BY_ITEM -> {
                     billItems.forEach { item ->
                         val assignedUid = itemAssignments[item.itemId] ?: return@forEach
-
-                        // ❗ Each assigned person owes their item price → NEGATIVE
                         newBalances[assignedUid] =
                             (newBalances[assignedUid] ?: 0.0) - item.itemPrice
                     }
                 }
             }
-
-            // ❗ Author paid the whole bill → POSITIVE
             newBalances[authorId] = (newBalances[authorId] ?: 0.0) + total
-
             tx.update(groupRef, "balances", newBalances)
         }
             .addOnFailureListener { e ->
@@ -245,9 +234,7 @@ class BillViewModel : ViewModel() {
 
 }
 
-/**
- * Separate FileProvider used for image Uris (camera/gallery).
- */
+
 class ComposeFileProvider : FileProvider(
     R.xml.filepaths
 ) {

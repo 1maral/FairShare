@@ -25,7 +25,6 @@ class ProfileViewModel(
     private val auth = FirebaseAuth.getInstance()
     private val db = FirebaseFirestore.getInstance()
 
-    // State exposed to UI
     val preferredCurrency = mutableStateOf("USD")
     val paymentMethods = mutableStateOf<Map<String, String>>(emptyMap())
     val avatarUrl = mutableStateOf<String?>(null)
@@ -102,7 +101,6 @@ class ProfileViewModel(
 
         viewModelScope.launch {
             try {
-                // If a new avatar is selected, upload it to Supabase first
                 val newAvatarUri = localAvatarUri.value
                 val newAvatarUrl: String? = if (newAvatarUri != null) {
                     val bytes = uriToJpegBytes(contentResolver, newAvatarUri)
@@ -111,7 +109,6 @@ class ProfileViewModel(
                     null
                 }
 
-                // Build partial updates
                 val updates = mutableMapOf<String, Any>(
                     "preferredCurrency" to preferredCurrency.value,
                     "paymentMethods" to paymentMethods.value

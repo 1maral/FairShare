@@ -57,7 +57,6 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun NavGraph(modifier: Modifier) {
     val backStack = rememberNavBackStack(SplashScreenKey)
-    //val backStack = rememberNavBackStack(AiBillReaderScreenKey)
 
     NavDisplay(
         backStack = backStack,

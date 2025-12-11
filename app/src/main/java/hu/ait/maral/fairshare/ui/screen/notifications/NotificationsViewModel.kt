@@ -20,7 +20,6 @@ class NotificationsViewModel : ViewModel() {
     private val auth = FirebaseAuth.getInstance()
     private val db = FirebaseFirestore.getInstance()
 
-    /** Load all groups where current user is in pendingMemberIds */
     fun loadPendingGroups() {
         val user = auth.currentUser ?: return
 
@@ -43,12 +42,6 @@ class NotificationsViewModel : ViewModel() {
             }
     }
 
-    /**
-     * User accepts an invite:
-     * - move uid from pendingMemberIds → memberIds
-     * - add their display name to members
-     * - ensure balances is a Map<memberId, Double> and add entry for this user
-     */
     fun acceptGroup(group: Group) {
         val user = auth.currentUser ?: return
         val groupRef = db.collection("groups").document(group.groupId)
@@ -65,12 +58,10 @@ class NotificationsViewModel : ViewModel() {
             val currentMembers =
                 (groupSnap.get("members") as? List<String>) ?: emptyList()
 
-            // --- balances: support BOTH old list format and new map format ---
             val rawBalances = groupSnap.get("balances")
 
             val balancesMap: MutableMap<String, Double> = when (rawBalances) {
                 is Map<*, *> -> {
-                    // New schema already: Map<String, Number>
                     rawBalances.mapNotNull { (k, v) ->
                         val key = k as? String ?: return@mapNotNull null
                         val value = (v as? Number)?.toDouble() ?: 0.0
@@ -79,7 +70,6 @@ class NotificationsViewModel : ViewModel() {
                 }
 
                 is List<*> -> {
-                    // Old schema: List<Double> aligned with memberIds by index
                     val list = rawBalances.map { (it as? Number)?.toDouble() ?: 0.0 }
                     mutableMapOf<String, Double>().apply {
                         for (i in currentMemberIds.indices) {
@@ -89,29 +79,22 @@ class NotificationsViewModel : ViewModel() {
                         }
                     }
                 }
-
                 else -> mutableMapOf()
             }
-            // ----------------------------------------------------------------
-
-            // Display name for the accepting user
             val nameFromDoc = userSnap.getString("name")
             val displayName = nameFromDoc
                 ?: user.displayName
                 ?: user.email
                 ?: "Unknown"
 
-            // 1) Move uid from pending -> members
             val updatedMemberIds = (currentMemberIds + user.uid).distinct()
             val updatedPendingIds = currentPendingIds.filter { it != user.uid }
 
-            // 2) Add name + ensure they have a 0.0 entry in balances
             val updatedMembers = currentMembers + displayName
             if (!balancesMap.containsKey(user.uid)) {
                 balancesMap[user.uid] = 0.0
             }
 
-            // 3) Write everything back, always as MAP for balances
             tx.update(
                 groupRef,
                 mapOf(

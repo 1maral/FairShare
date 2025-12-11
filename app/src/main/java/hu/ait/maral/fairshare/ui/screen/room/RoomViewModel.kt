@@ -39,17 +39,12 @@ class RoomViewModel : ViewModel() {
     val currentUserId: String
         get() = auth.currentUser?.uid ?: ""
 
-
-    /**
-     * Observe group document in real-time.
-     */
     fun observeGroup(groupId: String) {
         if (groupId.isBlank()) {
             errorMessage.value = "Invalid group id."
             return
         }
 
-        // Remove previous listener if any
         groupListener?.remove()
 
         isLoading.value = true
@@ -94,34 +89,23 @@ class RoomViewModel : ViewModel() {
         owedPerPerson.value = computeOwedPerPerson(g.balances, uid)
     }
 
-    /**
-     * Given group-level net balances (in EUR) and the current user,
-     * compute how much the user owes each other member.
-     *
-     * balances: Map<memberId, netBalanceInEur>
-     *   > 0  -> group owes this member
-     *   < 0  -> this member owes the group
-     */
     private fun computeOwedPerPerson(
         balances: Map<String, Double>,
         currentUserId: String
     ): Map<String, Double> {
         val userBalance = balances[currentUserId] ?: 0.0
 
-        // If the user isn't a debtor, they don't owe anyone.
         if (userBalance >= 0.0) return emptyMap()
 
-        var remainingDebt = -userBalance  // positive amount user must pay
+        var remainingDebt = -userBalance
         val result = mutableMapOf<String, Double>()
 
-        // Collect all creditors (people the group owes)
         val creditors = balances
             .filter { (memberId, balance) ->
                 memberId != currentUserId && balance > 0.0
             }
             .toList()
 
-        // Greedy: pay creditors in order until your debt is exhausted
         for ((creditorId, creditorBalance) in creditors) {
             if (remainingDebt <= 0.0) break
 
@@ -131,7 +115,6 @@ class RoomViewModel : ViewModel() {
                 remainingDebt -= pay
             }
         }
-
         return result
     }
 
@@ -160,7 +143,6 @@ class RoomViewModel : ViewModel() {
             return
         }
 
-        // Remove old listener if any
         billsListener?.remove()
 
         isLoading.value = true
@@ -181,11 +163,9 @@ class RoomViewModel : ViewModel() {
                         bill?.copy(billId = doc.id)
                     }
 
-                    // Newest first if you have billDate
                     val sorted = list.sortedByDescending { it.billDate }
                     bills.value = sorted
                 }
-
                 isLoading.value = false
             }
     }
@@ -205,9 +185,6 @@ class RoomViewModel : ViewModel() {
 
         val userBalance = balances[uid] ?: 0.0
         val creditorBalance = balances[creditorId] ?: 0.0
-
-        // User owes money → userBalance < 0
-        // Creditor is owed money → creditorBalance > 0
 
         val newUserBalance = userBalance + amountPaid
         val newCreditorBalance = creditorBalance - amountPaid

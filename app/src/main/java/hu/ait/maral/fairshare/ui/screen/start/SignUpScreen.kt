@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -29,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import hu.ait.maral.fairshare.R
 import hu.ait.maral.fairshare.ui.theme.BackgroundPink
 import hu.ait.maral.fairshare.ui.theme.ButtonGreen
 import hu.ait.maral.fairshare.ui.theme.LogoGreen
@@ -44,7 +46,6 @@ fun SignUpScreen(
     onRegisterSuccess: () -> Unit,
     onNavigateBack: () -> Unit
 ) {
-    // form state
     var name by rememberSaveable { mutableStateOf("") }
     var phone by rememberSaveable { mutableStateOf("") }
     var email by rememberSaveable { mutableStateOf(defaultEmail) }
@@ -54,21 +55,37 @@ fun SignUpScreen(
     var showPasswordConfirm by rememberSaveable { mutableStateOf(false) }
 
     val currencyOptions = listOf(
-        "USD", "EUR", "GBP", "HUF", "JPY",
-        "CAD", "AUD", "CHF", "INR", "CNY",
-        "SEK", "NOK", "NZD", "MXN", "BRL"
+        stringResource(hu.ait.maral.fairshare.R.string.usd),
+        stringResource(hu.ait.maral.fairshare.R.string.eur),
+        stringResource(hu.ait.maral.fairshare.R.string.gbp),
+        stringResource(hu.ait.maral.fairshare.R.string.huf),
+        stringResource(hu.ait.maral.fairshare.R.string.jpy),
+        stringResource(hu.ait.maral.fairshare.R.string.cad),
+        stringResource(hu.ait.maral.fairshare.R.string.aud),
+        stringResource(hu.ait.maral.fairshare.R.string.chf),
+        stringResource(hu.ait.maral.fairshare.R.string.inr),
+        stringResource(hu.ait.maral.fairshare.R.string.cny),
+        stringResource(hu.ait.maral.fairshare.R.string.sek),
+        stringResource(hu.ait.maral.fairshare.R.string.nok),
+        stringResource(hu.ait.maral.fairshare.R.string.nzd),
+        stringResource(hu.ait.maral.fairshare.R.string.mxn),
+        stringResource(R.string.brl)
     )
     var isCurrencyExpanded by rememberSaveable { mutableStateOf(false) }
     var selectedCurrency by rememberSaveable { mutableStateOf(currencyOptions.first()) }
 
     val paymentMethods = remember { mutableStateMapOf<String, String>() }
 
-    val paymentTypeOptions = listOf("Zelle", "Venmo", "PayPal", "Cash App", "Bank Transfer")
+    val paymentTypeOptions = listOf(
+        stringResource(R.string.zelle),
+        stringResource(R.string.venmo),
+        stringResource(R.string.paypal),
+        stringResource(R.string.cash_app),
+        stringResource(R.string.bank_transfer))
     var isPaymentTypeExpanded by rememberSaveable { mutableStateOf(false) }
     var selectedPaymentType by rememberSaveable { mutableStateOf(paymentTypeOptions.first()) }
     var newPaymentValue by rememberSaveable { mutableStateOf("") }
 
-    // avatar picking
     val context = LocalContext.current
     var avatarUri by remember { mutableStateOf<Uri?>(null) }
     val pickImageLauncher = rememberLauncherForActivityResult(
@@ -77,21 +94,17 @@ fun SignUpScreen(
         avatarUri = uri
     }
 
-    // UI helpers
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    // Observe viewModel state
     val state = viewModel.signUpUiState
 
-    // Scaffold so we can put TopAppBar with avatar
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        // Avatar left of title
                         Box(
                             modifier = Modifier
                                 .size(40.dp)
@@ -122,7 +135,7 @@ fun SignUpScreen(
                         Spacer(modifier = Modifier.width(8.dp))
 
                         Text(
-                            text = "Create Your FairShare Account",
+                            text = stringResource(R.string.create_your_fairshare_account),
                             fontSize = 18.sp,
                             color = LogoGreen
                         )
@@ -152,7 +165,6 @@ fun SignUpScreen(
                 contentPadding = PaddingValues(vertical = 18.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Avatar preview + upload button
                 item {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -188,40 +200,37 @@ fun SignUpScreen(
                         Spacer(modifier = Modifier.width(12.dp))
 
                         OutlinedButton(onClick = { pickImageLauncher.launch("image/*") }) {
-                            Text("Choose Avatar")
+                            Text(stringResource(R.string.choose_avatar))
                         }
                     }
                 }
 
-                // Name
                 item {
                     OutlinedTextField(
                         value = name,
                         onValueChange = { name = it },
-                        label = { Text("Full Name") },
+                        label = { Text(stringResource(R.string.full_name)) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
 
-                // Phone
                 item {
                     OutlinedTextField(
                         value = phone,
                         onValueChange = { phone = it },
-                        label = { Text("Phone Number") },
+                        label = { Text(stringResource(R.string.phone_number)) },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
 
-                // Email
                 item {
                     OutlinedTextField(
                         value = email,
                         onValueChange = { email = it },
-                        label = { Text("Email") },
+                        label = { Text(stringResource(R.string.email)) },
                         leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
@@ -233,7 +242,7 @@ fun SignUpScreen(
                     OutlinedTextField(
                         value = password,
                         onValueChange = { password = it },
-                        label = { Text("Password") },
+                        label = { Text(stringResource(R.string.password)) },
                         singleLine = true,
                         visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
                         trailingIcon = {
@@ -249,12 +258,11 @@ fun SignUpScreen(
                     )
                 }
 
-                // Confirm password
                 item {
                     OutlinedTextField(
                         value = confirmPassword,
                         onValueChange = { confirmPassword = it },
-                        label = { Text("Confirm Password") },
+                        label = { Text(stringResource(R.string.confirm_password)) },
                         singleLine = true,
                         visualTransformation = if (showPasswordConfirm) VisualTransformation.None else PasswordVisualTransformation(),
                         trailingIcon = {
@@ -270,7 +278,6 @@ fun SignUpScreen(
                     )
                 }
 
-                // Preferred currency
                 item {
                     ExposedDropdownMenuBox(
                         expanded = isCurrencyExpanded,
@@ -319,9 +326,8 @@ fun SignUpScreen(
                     }
                 }
 
-                // Payment methods
                 item {
-                    Text("Payment methods", color = LogoGreen)
+                    Text(stringResource(R.string.payment_methods), color = LogoGreen)
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Row(
@@ -329,7 +335,6 @@ fun SignUpScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Payment type dropdown
                         ExposedDropdownMenuBox(
                             expanded = isPaymentTypeExpanded,
                             onExpandedChange = { isPaymentTypeExpanded = !isPaymentTypeExpanded },
@@ -339,7 +344,7 @@ fun SignUpScreen(
                                 value = selectedPaymentType,
                                 onValueChange = {},
                                 readOnly = true,
-                                label = { Text("Type") },
+                                label = { Text(stringResource(R.string.type)) },
                                 modifier = Modifier
                                     .menuAnchor()
                                     .fillMaxWidth(),
@@ -376,11 +381,10 @@ fun SignUpScreen(
                             }
                         }
 
-                        // Handle / ID
                         OutlinedTextField(
                             value = newPaymentValue,
                             onValueChange = { newPaymentValue = it },
-                            placeholder = { Text("ex: @User") },
+                            placeholder = { Text(stringResource(R.string.ex_user)) },
                             singleLine = true,
                             modifier = Modifier.weight(1.5f)
                         )
@@ -402,7 +406,6 @@ fun SignUpScreen(
                     }
                 }
 
-                // show added payment methods with delete option
                 item {
                     Spacer(modifier = Modifier.height(8.dp))
                 }
@@ -428,7 +431,6 @@ fun SignUpScreen(
                     }
                 }
 
-                // action buttons
                 item {
                     Spacer(modifier = Modifier.height(12.dp))
                     Row(
@@ -441,7 +443,7 @@ fun SignUpScreen(
                                 containerColor = ButtonGreen
                             )
                         ) {
-                            Text("Back", color = MaterialTheme.colorScheme.onPrimary)
+                            Text(stringResource(R.string.back), color = MaterialTheme.colorScheme.onPrimary)
                         }
                         OutlinedButton(
                             onClick = {
@@ -500,13 +502,12 @@ fun SignUpScreen(
                                 containerColor = ButtonGreen
                             )
                         ) {
-                            Text("Sign Up", color = MaterialTheme.colorScheme.onPrimary)
+                            Text(stringResource(R.string.sign_up), color = MaterialTheme.colorScheme.onPrimary)
                         }
                     }
                 }
             }
 
-            // UI state -> snackbars / loading
             when (state) {
                 is SignUpUiState.Error -> {
                     LaunchedEffect(state) {

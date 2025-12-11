@@ -20,12 +20,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import hu.ait.maral.fairshare.R
 import hu.ait.maral.fairshare.data.FxRates
 import hu.ait.maral.fairshare.ui.screen.rate.RatesViewModel
 import hu.ait.maral.fairshare.ui.theme.BackgroundPink
@@ -62,14 +64,11 @@ fun HomeScreen(
     var groupName by remember { mutableStateOf("") }
     var memberEmails by remember { mutableStateOf(listOf("")) }
 
-
     var isAddMembersDialogOpen by remember { mutableStateOf(false) }
     var selectedGroupId by remember { mutableStateOf<String?>(null) }
     var addMemberEmails by remember { mutableStateOf(listOf("")) }
 
-
     val snackbarHostState = remember { SnackbarHostState() }
-
 
     LaunchedEffect(errorMessage) {
         errorMessage?.let { msg ->
@@ -149,7 +148,7 @@ fun HomeScreen(
 
                 groups.isEmpty() -> {
                     Text(
-                        "You are not in any groups yet.",
+                        stringResource(R.string.you_are_not_in_any_groups_yet),
                         color = ButtonGreen,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Medium
@@ -166,7 +165,6 @@ fun HomeScreen(
                             val memberIds = group.memberIds
                             val namesList = group.members
                             val balanceMap = group.balances
-
 
                             val avatarUrls = remember(group.groupId, memberIds.size) {
                                 mutableStateListOf<String?>().apply {
@@ -229,7 +227,7 @@ fun HomeScreen(
                 onDismissRequest = { isAddGroupDialogOpen = false },
                 title = {
                     Text(
-                        "Create new group",
+                        stringResource(R.string.create_new_group),
                         fontWeight = FontWeight.Bold,
                         color = ButtonGreen
                     )
@@ -239,13 +237,13 @@ fun HomeScreen(
                         OutlinedTextField(
                             value = groupName,
                             onValueChange = { groupName = it },
-                            label = { Text("Group name") },
+                            label = { Text(stringResource(R.string.group_name)) },
                             modifier = Modifier.fillMaxWidth()
                         )
 
                         Spacer(modifier = Modifier.height(12.dp))
 
-                        Text(text = "Member emails:")
+                        Text(text = stringResource(R.string.member_emails))
 
                         Spacer(modifier = Modifier.height(8.dp))
 
@@ -257,7 +255,7 @@ fun HomeScreen(
                                         it[index] = new
                                     }
                                 },
-                                placeholder = { Text("email@fairshare.com") },
+                                placeholder = { Text(stringResource(R.string.email_fairshare_com)) },
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(bottom = 8.dp),
@@ -268,7 +266,7 @@ fun HomeScreen(
                         TextButton(
                             onClick = { memberEmails = memberEmails + "" },
                         ) {
-                            Text("Add another email", color = ButtonGreen)
+                            Text(stringResource(R.string.add_another_email), color = ButtonGreen)
                         }
                     }
                 },
@@ -284,7 +282,7 @@ fun HomeScreen(
                             memberEmails = listOf("")
                         }
                     ) {
-                        Text("Create", color = Color.White)
+                        Text(stringResource(R.string.create), color = Color.White)
                     }
                 },
                 dismissButton = {
@@ -295,7 +293,7 @@ fun HomeScreen(
                             memberEmails = listOf("")
                         }
                     ) {
-                        Text("Cancel", color = Color.Red)
+                        Text(stringResource(R.string.cancel), color = Color.Red)
                     }
                 }
             )
@@ -311,7 +309,7 @@ fun HomeScreen(
                 },
                 title = {
                     Text(
-                        "Add members to group",
+                        stringResource(R.string.add_members_to_group),
                         fontWeight = FontWeight.Bold,
                         color = ButtonGreen
                     )

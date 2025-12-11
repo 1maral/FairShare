@@ -39,9 +39,6 @@ class SignUpViewModel(
     private val auth: FirebaseAuth = Firebase.auth
     private val db = FirebaseFirestore.getInstance()
 
-    /**
-     * Registers user, uploads avatar if available, saves to Firestore
-     */
     @RequiresApi(Build.VERSION_CODES.P)
     fun registerUser(
         contentResolver: ContentResolver,
@@ -90,14 +87,9 @@ class SignUpViewModel(
             }
     }
 
-
-    /**
-     * Uploads profile image to Supabase
-     */
     private suspend fun uploadProfileImage(uid: String, bytes: ByteArray): String? {
         return try {
 
-            // Safe filename without folders
             val fileName = "$uid-${UUID.randomUUID()}.jpg"
 
             val bucket = supabase.storage.from("profile_pictures")
@@ -106,7 +98,6 @@ class SignUpViewModel(
                 data = bytes
             )
 
-            // Get public URL
             bucket.publicUrl(fileName)
 
         } catch (e: Exception) {
@@ -115,10 +106,6 @@ class SignUpViewModel(
         }
     }
 
-
-    /**
-     * Saves user to Firestore
-     */
     private fun saveUserToFirestore(
         uid: String,
         name: String,

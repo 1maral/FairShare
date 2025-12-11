@@ -24,10 +24,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import hu.ait.maral.fairshare.R
 import hu.ait.maral.fairshare.ui.theme.BackgroundPink
 import hu.ait.maral.fairshare.ui.theme.ButtonGreen
 import hu.ait.maral.fairshare.ui.theme.LogoGreen
@@ -74,7 +76,7 @@ fun ProfileScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Your Profile",
+                        text = stringResource(R.string.your_profile),
                         fontSize = 20.sp,
                         color = LogoGreen
                     )
@@ -112,7 +114,6 @@ fun ProfileScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
 
-                    // Avatar
                     item {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -162,17 +163,28 @@ fun ProfileScreen(
                             Spacer(modifier = Modifier.width(12.dp))
 
                             OutlinedButton(onClick = { pickImageLauncher.launch("image/*") }) {
-                                Text("Change Avatar")
+                                Text(stringResource(R.string.change_avatar))
                             }
                         }
                     }
 
-                    // Preferred currency (styled dropdown)
                     item {
                         val currencyOptions = listOf(
-                            "USD", "EUR", "GBP", "HUF", "JPY",
-                            "CAD", "AUD", "CHF", "INR", "CNY",
-                            "SEK", "NOK", "NZD", "MXN", "BRL"
+                            stringResource(R.string.usd),
+                            stringResource(R.string.eur),
+                            stringResource(R.string.gbp),
+                            stringResource(R.string.huf),
+                            stringResource(R.string.jpy),
+                            stringResource(R.string.cad),
+                            stringResource(R.string.aud),
+                            stringResource(R.string.chf),
+                            stringResource(R.string.inr),
+                            stringResource(R.string.cny),
+                            stringResource(R.string.sek),
+                            stringResource(R.string.nok),
+                            stringResource(R.string.nzd),
+                            stringResource(R.string.mxn),
+                            stringResource(R.string.brl)
                         )
 
                         var currencyMenuExpanded by rememberSaveable { mutableStateOf(false) }
@@ -186,7 +198,7 @@ fun ProfileScreen(
                                 value = preferredCurrency,
                                 onValueChange = { /* readOnly */ },
                                 readOnly = true,
-                                label = { Text("Base Currency", color = LogoGreen) },
+                                label = { Text(stringResource(R.string.base_currency), color = LogoGreen) },
                                 trailingIcon = {
                                     ExposedDropdownMenuDefaults.TrailingIcon(expanded = currencyMenuExpanded)
                                 },
@@ -207,11 +219,11 @@ fun ProfileScreen(
                                 modifier = Modifier.heightIn(max = 240.dp),
                                 containerColor = BackgroundPink
                             ) {
-                                currencyOptions.forEach { code ->
+                                currencyOptions.forEach { cur ->
                                     DropdownMenuItem(
-                                        text = { Text(code, color = LogoGreen) },
+                                        text = { Text(cur, color = LogoGreen) },
                                         onClick = {
-                                            viewModel.setPreferredCurrency(code)
+                                            viewModel.setPreferredCurrency(cur)
                                             currencyMenuExpanded = false
                                         },
                                         colors = MenuDefaults.itemColors(
@@ -226,13 +238,16 @@ fun ProfileScreen(
                         }
                     }
 
-                    // Payment methods header + add row
                     item {
-                        Text("Payment methods (type + id)", color = LogoGreen)
+                        Text(stringResource(R.string.payment_methods_type_id), color = LogoGreen)
                         Spacer(modifier = Modifier.height(8.dp))
 
                         val paymentTypes = listOf(
-                            "Zelle", "Venmo", "PayPal", "Cash App", "Bank Transfer"
+                            stringResource(R.string.zelle),
+                            stringResource(R.string.venmo),
+                            stringResource(R.string.paypal),
+                            stringResource(R.string.cash_app),
+                            stringResource(R.string.bank_transfer)
                         )
                         var typeMenuExpanded by rememberSaveable { mutableStateOf(false) }
 
@@ -248,9 +263,9 @@ fun ProfileScreen(
                             ) {
                                 OutlinedTextField(
                                     value = newPaymentName,
-                                    onValueChange = { /* readOnly – no manual typing */ },
+                                    onValueChange = { },
                                     readOnly = true,
-                                    label = { Text("Method") },
+                                    label = { Text(stringResource(R.string.method)) },
                                     trailingIcon = {
                                         ExposedDropdownMenuDefaults.TrailingIcon(expanded = typeMenuExpanded)
                                     },
@@ -291,7 +306,7 @@ fun ProfileScreen(
                             OutlinedTextField(
                                 value = newPaymentValue,
                                 onValueChange = { newPaymentValue = it },
-                                placeholder = { Text("ex: @User") },
+                                placeholder = { Text(stringResource(R.string.ex_user)) },
                                 singleLine = true,
                                 modifier = Modifier.weight(1f)
                             )
@@ -312,7 +327,6 @@ fun ProfileScreen(
                         }
                     }
 
-                    // Existing payment methods
                     item { Spacer(modifier = Modifier.height(4.dp)) }
 
                     items(paymentMethods.entries.toList()) { entry ->
@@ -338,7 +352,6 @@ fun ProfileScreen(
                         }
                     }
 
-                    // Save button
                     item {
                         Spacer(modifier = Modifier.height(12.dp))
                         Button(
@@ -359,7 +372,7 @@ fun ProfileScreen(
                             colors = ButtonDefaults.buttonColors(containerColor = ButtonGreen),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("Save Changes", color = MaterialTheme.colorScheme.onPrimary)
+                            Text(stringResource(R.string.save_changes), color = MaterialTheme.colorScheme.onPrimary)
                         }
                     }
                 }

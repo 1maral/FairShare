@@ -9,15 +9,16 @@ import hu.ait.maral.fairshare.data.FxRates
 import hu.ait.maral.fairshare.network.MoneyAPI
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import hu.ait.maral.fairshare.BuildConfig.MONEY_API_KEY
 
 @HiltViewModel
 class RatesViewModel @Inject constructor(
     private val moneyAPI: MoneyAPI
 ) : ViewModel() {
 
-    private val API_KEY = "2df4ba14f9260afddbedbb51de05d359"
+    private val API_KEY = MONEY_API_KEY
 
-    // 🔹 PUBLIC STATE THAT HOMESCREEN WILL READ
+
     var fxRates = mutableStateOf<FxRates?>(null)
         private set
 

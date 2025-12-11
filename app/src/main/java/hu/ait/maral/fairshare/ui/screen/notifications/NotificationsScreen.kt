@@ -11,10 +11,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import hu.ait.maral.fairshare.R
 import hu.ait.maral.fairshare.data.Group
 import hu.ait.maral.fairshare.ui.theme.BackgroundPink
 import hu.ait.maral.fairshare.ui.theme.ButtonGreen
@@ -41,7 +43,7 @@ fun NotificationsScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Notifications",
+                        text = stringResource(R.string.notifications),
                         color = LogoGreen,
                         fontWeight = FontWeight.ExtraBold
                     )
@@ -94,7 +96,7 @@ fun NotificationsScreen(
                 }
 
                 pendingGroups.isEmpty() -> {
-                    Text("No pending group invitations.", color = LogoGreen)
+                    Text(stringResource(R.string.no_pending_group_invitations), color = LogoGreen)
                 }
 
                 else -> {
@@ -140,7 +142,7 @@ fun NotificationGroupCard(
             .fillMaxWidth()
             .padding(vertical = 8.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFE0E6)) // light strawberry pink
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFE0E6))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
@@ -151,8 +153,8 @@ fun NotificationGroupCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            val membersText = if (group.members.isEmpty()) "No members yet"
-            else "Members: ${group.members.joinToString(", ")}"
+            val membersText = if (group.members.isEmpty()) stringResource(R.string.no_members_yet)
+            else stringResource(R.string.members, group.members.joinToString(", "))
             Text(membersText, color = LogoGreen)
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -161,12 +163,12 @@ fun NotificationGroupCard(
                 Button(
                     onClick = onAccept,
                     colors = ButtonDefaults.buttonColors(containerColor = ButtonGreen)
-                ) { Text("Accept", color = Color.White) }
+                ) { Text(stringResource(R.string.accept), color = Color.White) }
 
                 OutlinedButton(
                     onClick = onDecline,
                     colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.White)
-                ) { Text("Decline", color = ButtonGreen) }
+                ) { Text(stringResource(R.string.decline), color = ButtonGreen) }
             }
         }
     }

@@ -53,9 +53,6 @@ class AiBillReaderViewModel : ViewModel() {
     private val _uiState = MutableStateFlow<AiBillUiState>(AiBillUiState.Init)
     val uiState = _uiState.asStateFlow()
 
-    // -----------------------
-    // Gemini AI scanning
-    // -----------------------
     private val genModel = GenerativeModel(
         modelName = "gemini-2.5-flash",
         apiKey = GEMINI_API_KEY,
@@ -102,7 +99,7 @@ class AiBillReaderViewModel : ViewModel() {
                 val notReceipt = root.optBoolean("notReceipt", false)
 
                 if (notReceipt) {
-                    _aiItems.value = emptyList() // No items
+                    _aiItems.value = emptyList()
                     _uiState.value = AiBillUiState.AIError("This is not a receipt")
                 } else {
                     _aiItems.value = parseItemsJson(fullResponse)
@@ -142,9 +139,6 @@ class AiBillReaderViewModel : ViewModel() {
         return result
     }
 
-    // -----------------------
-    // Upload AI-detected bill to Supabase + Firestore
-    // -----------------------
     @RequiresApi(Build.VERSION_CODES.P)
     fun uploadAIBill(
         groupId: String,

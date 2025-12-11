@@ -17,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -50,7 +51,6 @@ fun LoginScreen(
             .background(BackgroundPink)
     ) {
 
-        // Snackbar Host
         SnackbarHost(
             hostState = snackbarHostState,
             modifier = Modifier
@@ -65,7 +65,7 @@ fun LoginScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "FairShare",
+                text = stringResource(R.string.fairshare),
                 fontSize = 34.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color = LogoGreen
@@ -80,7 +80,6 @@ fun LoginScreen(
             )
         }
 
-        // Main Login Fields
         Column(
             modifier = Modifier
                 .align(Alignment.Center)
@@ -91,17 +90,17 @@ fun LoginScreen(
 
             OutlinedTextField(
                 modifier = Modifier.fillMaxWidth(0.8f),
-                label = { Text("E-mail") },
+                label = { Text(stringResource(R.string.e_mail)) },
                 value = email,
                 onValueChange = { email = it },
-                placeholder = { Text("email@fairshare.com") },
+                placeholder = { Text(stringResource(R.string.email_fairshare_com)) },
                 singleLine = true,
                 leadingIcon = { Icon(Icons.Default.Email, null) }
             )
 
             OutlinedTextField(
                 modifier = Modifier.fillMaxWidth(0.8f),
-                label = { Text("Password") },
+                label = { Text(stringResource(R.string.password)) },
                 value = password,
                 onValueChange = { password = it },
                 placeholder = { Text("") },
@@ -125,7 +124,6 @@ fun LoginScreen(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
 
-                // LOGIN BUTTON
                 OutlinedButton(
                     onClick = {
                         coroutineScope.launch {
@@ -143,7 +141,7 @@ fun LoginScreen(
                         containerColor = ButtonGreen
                     )
                 ) {
-                    Text("Login", color = Color.White)
+                    Text(stringResource(R.string.login), color = Color.White)
                 }
 
                 OutlinedButton(
@@ -152,7 +150,7 @@ fun LoginScreen(
                         containerColor = ButtonGreen
                     )
                 ) {
-                    Text("Register", color = Color.White)
+                    Text(stringResource(R.string.register), color = Color.White)
                 }
             }
         }

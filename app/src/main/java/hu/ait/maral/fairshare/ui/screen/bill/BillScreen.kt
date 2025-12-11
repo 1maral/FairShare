@@ -50,6 +50,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -82,23 +83,17 @@ fun BillScreen(
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
-    // --- AI Scanner dependencies ---
     val aiVm: AiBillReaderViewModel = viewModel()
     val aiItems by aiVm.aiItems.collectAsState()
     val aiUiState by aiVm.uiState.collectAsState()
 
-    //var editableAiItems by remember { mutableStateOf(mutableListOf<Item>()) }
     var allItems = remember { mutableStateListOf<Item>() }
 
     LaunchedEffect(aiItems) {
-        // editableAiItems = aiItems.toMutableList()
         allItems.clear()
         allItems.addAll(aiItems)
     }
 
-    // ------------------------------
-    //  STATE
-    // ------------------------------
     val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
 
     var billTitle by remember { mutableStateOf("") }
@@ -110,9 +105,21 @@ fun BillScreen(
     var splitMethod by remember { mutableStateOf(SplitMethod.EQUAL) }
 
     val currencyOptions = listOf(
-        "USD", "EUR", "GBP", "HUF", "JPY", "CAD",
-        "AUD", "CHF", "INR", "CNY", "SEK", "NOK",
-        "NZD", "MXN", "BRL"
+        stringResource(R.string.usd),
+        stringResource(R.string.eur),
+        stringResource(R.string.gbp),
+        stringResource(R.string.huf),
+        stringResource(R.string.jpy),
+        stringResource(R.string.cad),
+        stringResource(R.string.aud),
+        stringResource(R.string.chf),
+        stringResource(R.string.inr),
+        stringResource(R.string.cny),
+        stringResource(R.string.sek),
+        stringResource(R.string.nok),
+        stringResource(R.string.nzd),
+        stringResource(R.string.mxn),
+        stringResource(R.string.brl)
     )
     var selectedCurrency by remember { mutableStateOf(currencyOptions[0]) }
     var currencyExpanded by remember { mutableStateOf(false) }
@@ -129,9 +136,6 @@ fun BillScreen(
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
 
-    // ------------------------------
-    // CAMERA LOGIC
-    // ------------------------------
     var imageUri by remember { mutableStateOf<Uri?>(null) }
     var hasImage by remember { mutableStateOf(false) }
     val cameraLauncher = rememberLauncherForActivityResult(
@@ -147,35 +151,26 @@ fun BillScreen(
 
     fun Double.round2(): Double = kotlin.math.round(this * 100) / 100
 
-
-
     fun convertToEur(amount: Double): Double {
         val fx = fxRatesState
         val ratesMap = fx?.rates
 
-        // If we don't have rates yet or EUR is selected, don't convert
         if (fx == null || ratesMap == null || selectedCurrency == "EUR") {
             return amount
         }
 
         val rateForSelected = ratesMap[selectedCurrency] ?: return amount
 
-        // Assuming rates are "1 EUR = rateForSelected <selectedCurrency>".
-        // So: amount_in_EUR = amount_in_selected / rateForSelected.
         return (amount / rateForSelected).round2()
     }
 
 
-
-    // ------------------------------
-    // LAYOUT
-    // ------------------------------
     Scaffold(
         containerColor = BackgroundPink,
         topBar = {
             TopAppBar(
                 title = { Text(
-                    text = "Create Bill",
+                    text = stringResource(R.string.create_bill),
                     color = LogoGreen
                 ) },
                 navigationIcon = {
@@ -199,13 +194,12 @@ fun BillScreen(
                 OutlinedTextField(
                     value = billTitle,
                     onValueChange = { billTitle = it },
-                    label = { Text(text = "Bill Title", color = LogoGreen) },
+                    label = { Text(text = stringResource(R.string.bill_title), color = LogoGreen) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(Modifier.height(16.dp))
             }
 
-            // Currency Dropdown
             item {
                 Text("Currency", color = Color(0xFFE76F8E))
                 Box {
@@ -232,9 +226,8 @@ fun BillScreen(
                 Spacer(Modifier.height(16.dp))
             }
 
-            // Camera Section
             item {
-                Text("Bill Photo", color = Color(0xFFE76F8E))
+                Text(stringResource(R.string.bill_photo), color = Color(0xFFE76F8E))
                 if (cameraPermissionState.status.isGranted) {
                     Button(onClick = { takePhoto() }, colors = androidx.compose.material3.ButtonDefaults.buttonColors(Color(0xFFE76F8E))) { Text("Take Photo") }
                 } else {
@@ -245,7 +238,7 @@ fun BillScreen(
                             "Please grant camera permission."
                         Text(text)
                         Button(onClick = { cameraPermissionState.launchPermissionRequest() }) {
-                            Text("Allow Camera")
+                            Text(stringResource(R.string.allow_camera))
                         }
                     }
                 }
@@ -261,16 +254,17 @@ fun BillScreen(
                 Spacer(Modifier.height(16.dp))
             }
 
-            // Split Method Dropdown
             item {
-                Text("Split Method", color = Color(0xFFE76F8E))
+                Text(stringResource(R.string.split_method), color = Color(0xFFE76F8E))
                 var splitExpanded by remember { mutableStateOf(false) }
                 Box {
                     OutlinedButton(
                         onClick = { splitExpanded = true },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(text = if (splitMethod == SplitMethod.BY_ITEM) "By Item" else "Equal",
+                        Text(text = if (splitMethod == SplitMethod.BY_ITEM) stringResource(R.string.by_item) else stringResource(
+                            R.string.equal
+                        ),
                             color = Color(0xFFE76F8E))
                     }
                     DropdownMenu(
@@ -278,14 +272,14 @@ fun BillScreen(
                         onDismissRequest = { splitExpanded = false }
                     ) {
                         DropdownMenuItem(
-                            text = { Text("Equal", color = Color(0xFFE76F8E)) },
+                            text = { Text(stringResource(R.string.equal), color = Color(0xFFE76F8E)) },
                             onClick = {
                                 splitMethod = SplitMethod.EQUAL
                                 splitExpanded = false
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("By Item", color = Color(0xFFE76F8E)) },
+                            text = { Text(stringResource(R.string.by_item), color = Color(0xFFE76F8E)) },
                             onClick = {
                                 splitMethod = SplitMethod.BY_ITEM
                                 splitExpanded = false
@@ -308,23 +302,20 @@ fun BillScreen(
                 Spacer(Modifier.height(16.dp))
             }
 
-            // Equal split: total price
             if (splitMethod == SplitMethod.EQUAL) {
                 item {
                     OutlinedTextField(
                         value = totalPrice,
                         onValueChange = { totalPrice = it },
-                        label = { Text("Total Price ($selectedCurrency)", color = LogoGreen) },
+                        label = { Text(stringResource(R.string.total_price, selectedCurrency), color = LogoGreen) },
                         modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(Modifier.height(24.dp))
                 }
             }
 
-            // By item split
             if (splitMethod == SplitMethod.BY_ITEM) {
                 item {
-                    // --- AI STATUS UI ---
                     when (aiUiState) {
                         is AiBillUiState.LoadingAI -> {
                             CircularProgressIndicator()
@@ -337,7 +328,7 @@ fun BillScreen(
                             Spacer(Modifier.height(16.dp))
                         }
                         is AiBillUiState.AIResultReady -> {
-                            Text("AI Extracted Items:")
+                            Text(stringResource(R.string.ai_extracted_items))
                             Spacer(Modifier.height(8.dp))
                         }
                         else -> {}
@@ -353,7 +344,7 @@ fun BillScreen(
                                 onValueChange = { newName ->
                                     allItems[index] = item.copy(itemName = newName)
                                 },
-                                label = { Text("Item Name") }
+                                label = { Text(stringResource(R.string.item_name)) }
                             )
 
                             OutlinedTextField(
@@ -362,16 +353,17 @@ fun BillScreen(
                                     val price = newPrice.toDoubleOrNull() ?: 0.0
                                     allItems[index] = item.copy(itemPrice = price)
                                 },
-                                label = { Text("Price") }
+                                label = { Text(stringResource(R.string.price)) }
                             )
 
                             var expanded by remember { mutableStateOf(false) }
                             var assignedId = itemAssignments[item.itemId]
                             var assignedName =
-                                members.find { it.first == assignedId }?.second ?: "Assign to"
+                                members.find { it.first == assignedId }?.second ?: context.getString(
+                                    R.string.assign_to
+                                )
 
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                // Assign dropdown button
                                 Box {
                                     OutlinedButton(onClick = { expanded = true }) {
                                         Text(assignedName, color = Color(0xFFE76F8E))
@@ -392,10 +384,8 @@ fun BillScreen(
                                                 )
                                             }
                                     }
-
                                 }
 
-                                // Delete button
                                 Button(onClick = {
                                     allItems.removeAt(index)
                                     itemAssignments.remove(item.itemId)
@@ -403,7 +393,7 @@ fun BillScreen(
                                     0xFFFF3030
                                 )
                                 )) {
-                                    Text("Delete", color = Color(0xFFFFFFFF))
+                                    Text(stringResource(R.string.delete), color = Color(0xFFFFFFFF))
                                 }
                             }
                         }
@@ -415,7 +405,7 @@ fun BillScreen(
                 }
 
                 item {
-                    Text("Add More Bill Items")
+                    Text(stringResource(R.string.add_more_bill_items))
                     Spacer(Modifier.height(8.dp))
                 }
 
@@ -431,7 +421,7 @@ fun BillScreen(
                         OutlinedTextField(
                             value = newItemPrice,
                             onValueChange = { newItemPrice = it },
-                            label = { Text("Price") },
+                            label = { "Price" },
                             modifier = Modifier.width(100.dp)
                         )
                     }
@@ -502,21 +492,20 @@ fun BillScreen(
                 item { Spacer(Modifier.height(24.dp)) }
             }
 
-            // Save Bill button + progress messages
             item {
                 Button(
                     onClick = {
-                        // Require at least 1 item when using BY_ITEM
                         if (splitMethod == SplitMethod.BY_ITEM && allItems.isEmpty()) {
-                            errorMessage = "Please add at least one item before saving."
+                            errorMessage =
+                                context.getString(R.string.please_add_at_least_one_item_before_saving)
                             return@Button
                         }
 
-                        // Require all items to be assigned
                         if (splitMethod == SplitMethod.BY_ITEM) {
                             val unassignedItems = allItems.filter { itemAssignments[it.itemId] == null }
                             if (unassignedItems.isNotEmpty()) {
-                                errorMessage = "Please assign all items to a member before saving."
+                                errorMessage =
+                                    context.getString(R.string.please_assign_all_items_to_a_member_before_saving)
                                 return@Button
                             }
                         }
@@ -526,7 +515,7 @@ fun BillScreen(
                         val finalItems =
                             if (splitMethod == SplitMethod.EQUAL) {
                                 val total = totalPrice.toDoubleOrNull() ?: 0.0
-                                listOf(Item("Total", total))
+                                listOf(Item(context.getString(R.string.total), total))
                             } else {
                                 allItems
                             }
@@ -562,28 +551,31 @@ fun BillScreen(
                      modifier = Modifier.fillMaxWidth()
                 , colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = LogoGreen)
                 ) {
-                    Text("Save Bill")
+                    Text(stringResource(R.string.save_bill))
                 }
 
                 Spacer(Modifier.height(16.dp))
 
                 when (val state = viewModel.billUploadUiState) {
                     is BillUploadUiState.LoadingBillUpload,
-                    is BillUploadUiState.LoadingImageUpload ->
+                    is BillUploadUiState.LoadingImageUpload -> {
                         CircularProgressIndicator()
+                    }
 
                     is BillUploadUiState.BillUploadSuccess -> {
-                        Text("Bill saved successfully!")
+                        Text(stringResource(R.string.bill_saved_successfully))
                     }
                     is BillUploadUiState.ImageUploadSuccess -> {
-                        Text("Bill Image saved successfully!")
+                        Text(stringResource(R.string.bill_image_saved_successfully))
                     }
 
-                    is BillUploadUiState.ErrorDuringBillUpload ->
+                    is BillUploadUiState.ErrorDuringBillUpload -> {
                         Text("Error: ${state.error}")
+                    }
 
-                    is BillUploadUiState.ErrorDuringImageUpload ->
+                    is BillUploadUiState.ErrorDuringImageUpload -> {
                         Text("Image error: ${state.error}")
+                    }
 
                     else -> {}
                 }
@@ -592,8 +584,6 @@ fun BillScreen(
                     Spacer(Modifier.height(8.dp))
                     Text(it, color = Color.Red)
                 }
-
-
             }
         }
     }
