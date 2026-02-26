@@ -35,6 +35,7 @@ android {
 
         buildConfigField("String", "GEMINI_API_KEY", "\"" + localProps["gemini.apikey"] + "\"")
         buildConfigField("String", "MONEY_API_KEY", "\"" + localProps["money.apikey"] + "\"")
+        buildConfigField("String", "SUPABASE_API_KEY", "\"" + localProps["supabase.apikey"] + "\"")
     }
 
     buildTypes {

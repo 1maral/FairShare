@@ -50,7 +50,7 @@
     <string name="members">Members: %1$s</string>
     <string name="accept">Accept</string>
     <string name="decline">Decline</string>
-    <string name="your_profile">Your Profile</string>
+    <string name="your_profile">Profile Settings</string>
     <string name="change_avatar">Change Avatar</string>
     <string name="base_currency">Base Currency</string>
     <string name="payment_methods_type_id">Payment methods (type + id)</string>

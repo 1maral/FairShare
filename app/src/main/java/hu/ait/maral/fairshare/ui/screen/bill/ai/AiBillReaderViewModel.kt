@@ -132,7 +132,7 @@ class AiBillReaderViewModel : ViewModel() {
                 Item(
                     itemName = name,
                     itemPrice = price,
-                    itemCurrency = "EUR"
+                    itemCurrency = "USD"
                 )
             )
         }

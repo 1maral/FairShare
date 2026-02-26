@@ -36,6 +36,8 @@ import hu.ait.maral.fairshare.ui.screen.start.SignUpScreen
 import hu.ait.maral.fairshare.ui.screen.start.SplashScreen
 import hu.ait.maral.fairshare.ui.theme.FairShareTheme
 
+// We used Supabase API for image storage, Google Firebase API for account authentication
+// and data storage, Fixer.io API for MoneyExchange API.
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.P)
@@ -113,7 +115,8 @@ fun NavGraph(modifier: Modifier) {
             }
 
             entry<ProfileScreenKey> { key ->
-                ProfileScreen(onSaveClick = {backStack.add(HomeScreenKey)})}
+                ProfileScreen(onSaveClick = {backStack.add(HomeScreenKey)},
+                    onBackClick = {backStack.removeLastOrNull()})}
 
 
             entry<BillScreenKey> { key ->

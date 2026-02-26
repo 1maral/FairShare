@@ -284,14 +284,12 @@ fun BillScreen(
                                 splitMethod = SplitMethod.BY_ITEM
                                 splitExpanded = false
 
-                                // 🔍 Auto-run AI if image exists
+                                // Auto-run AI if image exists
                                 if (imageUri != null) {
-                                    //changed val to var for bitmap for testing purposes  -Jacky
-                                    var bitmap = BitmapFactory.decodeStream(
+                                    val bitmap = BitmapFactory.decodeStream(
                                         context.contentResolver.openInputStream(imageUri!!)
                                     )
                                     if (bitmap != null) {
-                                        bitmap = BitmapFactory.decodeResource(context.resources, R.drawable.receite )
                                         aiVm.scanReceiptWithAI(bitmap)
                                     }
                                 }
