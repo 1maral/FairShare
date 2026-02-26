@@ -48,7 +48,6 @@ private val OffWhite   = Color(0xFFFFFAFC)
 private val Stone      = Color(0xFF9E8E95)
 private val FieldBg    = Color(0xFFFFF8FA)
 private val FieldFocus = Color(0xFFF9E4EC)
-private val TopBarColor = Color(0xFF6BAF85)
 
 @Composable
 private fun fieldColors() = OutlinedTextFieldDefaults.colors(
@@ -77,9 +76,7 @@ private fun SectionCard(title: String, content: @Composable ColumnScope.() -> Un
                         .width(4.dp)
                         .height(16.dp)
                         .clip(RoundedCornerShape(2.dp))
-                        .background(
-                            Brush.verticalGradient(listOf(Rose500, Mint300))
-                        )
+                        .background(Brush.verticalGradient(listOf(Rose500, Mint300)))
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(
@@ -131,33 +128,6 @@ fun ProfileScreen(
 
     Scaffold(
         containerColor = Color.Transparent,
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text          = stringResource(R.string.your_profile),
-                        fontSize      = 20.sp,
-                        fontWeight    = FontWeight.Bold,
-                        color         = Color.White,
-                        letterSpacing = 0.3.sp
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            imageVector        = Icons.Default.ArrowBack,
-                            contentDescription = "Back",
-                            tint               = Color.White
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor             = TopBarColor,
-                    navigationIconContentColor = Color.White,
-                    titleContentColor          = Color.White
-                )
-            )
-        },
         snackbarHost = {
             SnackbarHost(hostState = snackbarHostState) { data ->
                 Snackbar(
@@ -177,24 +147,50 @@ fun ProfileScreen(
                 .background(
                     Brush.verticalGradient(
                         listOf(
-                            Color(0xFFFDE8F0),
-                            Color(0xFFFFFAFC),
-                            Color(0xFFDDF0E4)
+                            Color(0xFFFAECF2),   // matches HomeScreen exactly
+                            Color(0xFFFFF8FB),
+                            Color(0xFFEDF7F0)
                         )
                     )
                 )
         ) {
+            // ── Soft accent orbs (same as HomeScreen & LoginScreen) ───────────
+            Box(
+                Modifier
+                    .size(300.dp)
+                    .offset((-120).dp, (-120).dp)
+                    .clip(CircleShape)
+                    .background(
+                        Brush.radialGradient(listOf(Color(0x18E76F8E), Color.Transparent))
+                    )
+            )
+            Box(
+                Modifier
+                    .size(220.dp)
+                    .align(Alignment.BottomEnd)
+                    .offset(80.dp, 80.dp)
+                    .clip(CircleShape)
+                    .background(
+                        Brush.radialGradient(listOf(Color(0x14A8D8B0), Color.Transparent))
+                    )
+            )
+
             if (isLoading) {
                 CircularProgressIndicator(
                     modifier    = Modifier.align(Alignment.Center),
-                    color       = Mint300,
+                    color       = LogoGreen,
                     strokeWidth = 3.dp
                 )
             } else {
                 LazyColumn(
                     modifier            = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    contentPadding      = PaddingValues(horizontal = 24.dp, vertical = 20.dp),
+                    contentPadding      = PaddingValues(
+                        top    = 88.dp,   // clears the floating top bar
+                        start  = 24.dp,
+                        end    = 24.dp,
+                        bottom = 20.dp
+                    ),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
 
@@ -213,7 +209,7 @@ fun ProfileScreen(
                                         .border(
                                             width = 2.5.dp,
                                             brush = Brush.sweepGradient(
-                                                listOf(Rose300, Mint300, Rose500, Rose300)
+                                                listOf(Rose300, LogoGreen, Rose500, Rose300)
                                             ),
                                             shape = CircleShape
                                         )
@@ -249,7 +245,6 @@ fun ProfileScreen(
                                         )
                                     }
                                 }
-                                // Camera badge
                                 Box(
                                     modifier = Modifier
                                         .size(30.dp)
@@ -377,7 +372,6 @@ fun ProfileScreen(
 
                             Spacer(Modifier.height(10.dp))
 
-                            // Handle field + add button
                             Row(
                                 modifier              = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -398,7 +392,6 @@ fun ProfileScreen(
                                     colors     = fieldColors(),
                                     modifier   = Modifier.weight(1f)
                                 )
-                                // ── Add button: solid LogoGreen ──────────────
                                 Box(
                                     modifier = Modifier
                                         .size(52.dp)
@@ -459,7 +452,7 @@ fun ProfileScreen(
                         }
                     }
 
-                    // ── Save button: solid LogoGreen ─────────────────────────
+                    // ── Save button ──────────────────────────────────────────
                     item {
                         Spacer(Modifier.height(4.dp))
                         Button(
@@ -505,6 +498,58 @@ fun ProfileScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         CircularProgressIndicator(color = LogoGreen, strokeWidth = 3.dp)
+                    }
+                }
+
+                // ── Floating top bar — identical structure to HomeScreen ──────
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.TopCenter)
+                        .shadow(
+                            elevation    = 8.dp,
+                            shape        = RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp),
+                            ambientColor = Rose300.copy(alpha = 0.3f),
+                            spotColor    = Rose500.copy(alpha = 0.15f)
+                        )
+                        .clip(RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp))
+                        .background(
+                            Brush.horizontalGradient(listOf(LogoGreen, Color(0xFF5DB88A)))
+                        )
+                ) {
+                    Column {
+                        Spacer(Modifier.fillMaxWidth().statusBarsPadding())
+                        Row(
+                            modifier          = Modifier
+                                .fillMaxWidth()
+                                .height(52.dp)
+                                .padding(horizontal = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // Back button
+                            IconButton(
+                                onClick  = onBackClick,
+                                modifier = Modifier.size(36.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.ArrowBack,
+                                    contentDescription = "Back",
+                                    tint     = Color.White,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            Spacer(Modifier.width(6.dp))
+                            // Title
+                            Text(
+                                text          = stringResource(R.string.your_profile),
+                                fontSize      = 22.sp,
+                                fontWeight    = FontWeight.Black,
+                                color         = Color.White,
+                                letterSpacing = (-0.5).sp,
+                                modifier      = Modifier.weight(1f)
+                            )
+                        }
+                        Spacer(Modifier.height(10.dp))
                     }
                 }
             }

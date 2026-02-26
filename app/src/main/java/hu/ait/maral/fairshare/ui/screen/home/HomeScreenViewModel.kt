@@ -7,7 +7,7 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import hu.ait.maral.fairshare.data.Group
 import hu.ait.maral.fairshare.data.User
-
+import androidx.compose.runtime.State
 class HomeScreenViewModel : ViewModel() {
 
     var preferredCurrency = mutableStateOf("EUR")
@@ -173,7 +173,18 @@ class HomeScreenViewModel : ViewModel() {
                 callback(null)
             }
     }
+    private val _pendingNotificationCount = mutableStateOf(0)
+    val pendingNotificationCount: State<Int> = _pendingNotificationCount
 
+    fun loadPendingCount() {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        FirebaseFirestore.getInstance()
+            .collection("groups")
+            .whereArrayContains("pendingMemberIds", uid)
+            .addSnapshotListener { snapshot, _ ->
+                _pendingNotificationCount.value = snapshot?.size() ?: 0
+            }
+    }
 
     fun addMembersToGroup(groupId: String, memberEmails: List<String>) {
         val rawEmails = memberEmails

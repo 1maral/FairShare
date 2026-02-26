@@ -37,13 +37,13 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 // ── Palette ──────────────────────────────────────────────────────────────────
-private val Rose300   = Color(0xFFF48FB1)
-private val Rose500   = Color(0xFFE76F8E)
-private val Mint300   = Color(0xFFA8D8B0)
-private val OffWhite  = Color(0xFFFFFAFC)
-private val Stone     = Color(0xFF9E8E95)
-private val FieldBg   = Color(0xFFFFF8FA)
-private val FieldFocus= Color(0xFFF9E4EC)
+private val Rose300    = Color(0xFFF48FB1)
+private val Rose500    = Color(0xFFE76F8E)
+private val Mint300    = Color(0xFFA8D8B0)
+private val OffWhite   = Color(0xFFFFFAFC)
+private val Stone      = Color(0xFF9E8E95)
+private val FieldBg    = Color(0xFFFFF8FA)
+private val FieldFocus = Color(0xFFF9E4EC)
 
 // ── Diamond shape ─────────────────────────────────────────────────────────────
 private val DiamondShape = GenericShape { size, _ ->
@@ -68,29 +68,33 @@ fun LoginScreen(
     val coroutineScope    = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // ── Success overlay state ─────────────────────────────────────────────────
     var showSuccessOverlay by remember { mutableStateOf(false) }
 
-    // ── One slow rotation for the two decorative diamonds only ────────────────
+    // ── Breathing title scale ─────────────────────────────────────────────────
+    val breathe = rememberInfiniteTransition(label = "breathe")
+    val titleScale by breathe.animateFloat(
+        initialValue  = 1f,
+        targetValue   = 1.05f,
+        animationSpec = infiniteRepeatable(
+            tween(1400, easing = EaseInOutCubic),
+            RepeatMode.Reverse
+        ),
+        label = "titleScale"
+    )
+
+    // ── Divider diamond slow spin (kept, just for the small center diamond) ───
     val spin = rememberInfiniteTransition(label = "spin")
     val ringRotation by spin.animateFloat(
         initialValue  = 0f,
         targetValue   = 360f,
-        animationSpec = infiniteRepeatable(tween(800, easing = LinearEasing)),
+        animationSpec = infiniteRepeatable(tween(8000, easing = LinearEasing)),
         label         = "ring"
     )
 
-    // ── Card / title entrance (one-shot on load) ──────────────────────────────
-    val cardAlpha    = remember { Animatable(0f) }
-    val cardSlide    = remember { Animatable(32f) }
-    val titleAlpha   = remember { Animatable(0f) }
-    val dividerScale = remember { Animatable(0f) }
-
+    // ── Card entrance — simpler: just a quick fade, no slide ─────────────────
+    val cardAlpha = remember { Animatable(0f) }
     LaunchedEffect(Unit) {
-        titleAlpha.animateTo(1f, tween(400, easing = EaseOutCubic))
-        dividerScale.animateTo(1f, tween(100, delayMillis = 1, easing = EaseOutBack))
-        cardAlpha.animateTo(1f, tween(300, delayMillis = 150, easing = EaseOutCubic))
-        cardSlide.animateTo(0f, tween(300, delayMillis = 150, easing = EaseOutCubic))
+        cardAlpha.animateTo(1f, tween(400, easing = EaseOutCubic))
     }
 
     // ── Button press scale ────────────────────────────────────────────────────
@@ -145,13 +149,12 @@ fun LoginScreen(
                     )
             )
 
-            // ── Two slowly rotating decorative diamonds ───────────────────────
+            // ── Two static decorative diamonds (no spin) ──────────────────────
             Box(
                 Modifier
                     .size(90.dp)
                     .align(Alignment.TopEnd)
                     .offset((-28).dp, 36.dp)
-                    .rotate(ringRotation * 0.12f)
                     .clip(DiamondShape)
                     .background(
                         Brush.linearGradient(listOf(Color(0x18E76F8E), Color(0x0FA8D8B0)))
@@ -162,7 +165,6 @@ fun LoginScreen(
                     .size(30.dp)
                     .align(Alignment.TopStart)
                     .offset(32.dp, 60.dp)
-                    .rotate(-ringRotation * 0.1f)
                     .clip(DiamondShape)
                     .background(Color(0x25E76F8E))
             )
@@ -178,13 +180,14 @@ fun LoginScreen(
 
                 Spacer(Modifier.height(48.dp))
 
+                // Breathing title
                 Text(
                     text          = "FairShare",
                     fontSize      = 42.sp,
                     fontWeight    = FontWeight.Black,
                     color         = LogoGreen,
                     letterSpacing = (-1).sp,
-                    modifier      = Modifier.graphicsLayer { alpha = titleAlpha.value }
+                    modifier      = Modifier.scale(titleScale)
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
@@ -192,18 +195,15 @@ fun LoginScreen(
                     fontSize      = 13.sp,
                     color         = Stone,
                     letterSpacing = 0.6.sp,
-                    textAlign     = TextAlign.Center,
-                    modifier      = Modifier.graphicsLayer { alpha = titleAlpha.value }
+                    textAlign     = TextAlign.Center
                 )
 
                 Spacer(Modifier.height(10.dp))
 
-                // Decorative divider with gently spinning diamond center
+                // Decorative divider — only the small center diamond still spins
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth(0.7f)
-                        .graphicsLayer { scaleX = dividerScale.value; alpha = dividerScale.value }
+                    modifier          = Modifier.fillMaxWidth(0.7f)
                 ) {
                     HorizontalDivider(Modifier.weight(1f), color = Rose300.copy(alpha = 0.4f))
                     Box(
@@ -220,12 +220,9 @@ fun LoginScreen(
 
                 // ── Login card ────────────────────────────────────────────────
                 Card(
-                    modifier = Modifier
+                    modifier  = Modifier
                         .fillMaxWidth()
-                        .graphicsLayer {
-                            alpha        = cardAlpha.value
-                            translationY = cardSlide.value.dp.toPx()
-                        },
+                        .graphicsLayer { alpha = cardAlpha.value },
                     shape     = RoundedCornerShape(28.dp),
                     colors    = CardDefaults.cardColors(containerColor = OffWhite),
                     elevation = CardDefaults.cardElevation(defaultElevation = 10.dp)
@@ -240,11 +237,11 @@ fun LoginScreen(
                     )
 
                     Column(
-                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 28.dp),
+                        modifier            = Modifier.padding(horizontal = 24.dp, vertical = 28.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text          = "Welcome back",
+                            text          = "Welcome",
                             fontSize      = 19.sp,
                             fontWeight    = FontWeight.Bold,
                             color         = Rose500,
@@ -263,11 +260,16 @@ fun LoginScreen(
                             value         = email,
                             onValueChange = { email = it },
                             label         = { Text(stringResource(R.string.e_mail)) },
-                            placeholder   = { Text(stringResource(R.string.email_fairshare_com), color = Color(0xFFCCBBC2)) },
-                            singleLine    = true,
-                            leadingIcon   = { Icon(Icons.Default.Email, null, tint = Rose500) },
-                            shape         = RoundedCornerShape(16.dp),
-                            colors        = OutlinedTextFieldDefaults.colors(
+                            placeholder   = {
+                                Text(
+                                    stringResource(R.string.email_fairshare_com),
+                                    color = Color(0xFFCCBBC2)
+                                )
+                            },
+                            singleLine  = true,
+                            leadingIcon = { Icon(Icons.Default.Email, null, tint = Rose500) },
+                            shape       = RoundedCornerShape(16.dp),
+                            colors      = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor      = Rose500,
                                 unfocusedBorderColor    = Color(0xFFE8D5DC),
                                 focusedLabelColor       = Rose500,
@@ -317,7 +319,6 @@ fun LoginScreen(
                         Button(
                             onClick = {
                                 coroutineScope.launch {
-                                    // Brief press feedback
                                     loginBtnScale.animateTo(0.95f, tween(80))
                                     loginBtnScale.animateTo(
                                         1f,
@@ -326,7 +327,7 @@ fun LoginScreen(
                                     val result = viewModel.loginUser(email, password)
                                     if (result?.user != null) {
                                         showSuccessOverlay = true
-                                        delay(1800) // let success animation play
+                                        delay(1800)
                                         onLoginSuccess()
                                     }
                                 }
@@ -354,7 +355,7 @@ fun LoginScreen(
 
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier          = Modifier.fillMaxWidth()
                         ) {
                             HorizontalDivider(Modifier.weight(1f), color = Color(0xFFEDD8E0))
                             Text("  or  ", color = Stone, fontSize = 12.sp)
@@ -413,7 +414,7 @@ fun LoginScreen(
                 }
                 is LoginUiState.Loading -> {
                     Box(
-                        modifier = Modifier
+                        modifier         = Modifier
                             .fillMaxSize()
                             .background(Color(0x44FFFFFF)),
                         contentAlignment = Alignment.Center
@@ -427,7 +428,6 @@ fun LoginScreen(
                 else -> {}
             }
 
-            // ── Login success transition overlay ──────────────────────────────
             if (showSuccessOverlay) {
                 LoginSuccessOverlay()
             }
@@ -435,7 +435,7 @@ fun LoginScreen(
     }
 }
 
-// ── Full-screen success animation shown before navigating to RoomScreen ───────
+// ── Full-screen success animation ─────────────────────────────────────────────
 @Composable
 private fun LoginSuccessOverlay() {
     val overlayAlpha = remember { Animatable(0f) }
@@ -446,18 +446,12 @@ private fun LoginSuccessOverlay() {
 
     LaunchedEffect(Unit) {
         overlayAlpha.animateTo(1f, tween(280))
-        // Spring-pop the check circle
         checkScale.animateTo(
             1f,
             spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMedium)
         )
-        // Ripple expands while fading
-        launch {
-            rippleScale.animateTo(2.4f, tween(650, easing = EaseOutCubic))
-        }
-        launch {
-            rippleAlpha.animateTo(0f, tween(650, easing = EaseOutCubic))
-        }
+        launch { rippleScale.animateTo(2.4f, tween(650, easing = EaseOutCubic)) }
+        launch { rippleAlpha.animateTo(0f,   tween(650, easing = EaseOutCubic)) }
         textAlpha.animateTo(1f, tween(380, delayMillis = 100))
     }
 
@@ -476,7 +470,6 @@ private fun LoginSuccessOverlay() {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Ripple ring + check circle stacked
             Box(contentAlignment = Alignment.Center) {
                 Box(
                     Modifier
