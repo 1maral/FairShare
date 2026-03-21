@@ -9,5 +9,6 @@ data class User(
     val preferredCurrency: String = "EUR",
     val paymentMethods: Map<String, String> = emptyMap(),
     val createdAt: Long = System.currentTimeMillis(),
-    val lastLogin: Long = System.currentTimeMillis()
+    val lastLogin: Long = System.currentTimeMillis(),
+    val archivedRooms: List<String> = emptyList()
 )

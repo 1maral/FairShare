@@ -36,7 +36,7 @@ import hu.ait.maral.fairshare.ui.theme.LogoGreen
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-// ── Palette ──────────────────────────────────────────────────────────────────
+// ── Palette ───────────────────────────────────────────────────────────────────
 private val Rose300    = Color(0xFFF48FB1)
 private val Rose500    = Color(0xFFE76F8E)
 private val Mint300    = Color(0xFFA8D8B0)
@@ -45,7 +45,6 @@ private val Stone      = Color(0xFF9E8E95)
 private val FieldBg    = Color(0xFFFFF8FA)
 private val FieldFocus = Color(0xFFF9E4EC)
 
-// ── Diamond shape ─────────────────────────────────────────────────────────────
 private val DiamondShape = GenericShape { size, _ ->
     moveTo(size.width / 2f, 0f)
     lineTo(size.width, size.height / 2f)
@@ -56,33 +55,74 @@ private val DiamondShape = GenericShape { size, _ ->
 
 @Composable
 fun LoginScreen(
-    viewModel: LoginViewModel = viewModel(),
-    modifier: Modifier = Modifier,
-    onLoginSuccess: () -> Unit,
+    viewModel           : LoginViewModel = viewModel(),
+    modifier            : Modifier = Modifier,
+    onLoginSuccess      : () -> Unit,
     onNavigateToRegister: (prefillEmail: String, prefillPassword: String) -> Unit
 ) {
     var showPassword by rememberSaveable { mutableStateOf(false) }
     var email        by rememberSaveable { mutableStateOf("") }
     var password     by rememberSaveable { mutableStateOf("") }
 
+    // coroutineScope is ONLY used for Animatable button press — nothing else.
+    // All Firebase work happens inside viewModelScope in the ViewModel.
     val coroutineScope    = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
-
     var showSuccessOverlay by remember { mutableStateOf(false) }
 
-    // ── Breathing title scale ─────────────────────────────────────────────────
+    val loginUiState = viewModel.loginUiState
+    val isLoading    = loginUiState is LoginUiState.Loading
+
+    // ── Observe state changes ─────────────────────────────────────────────────
+    // Key on the specific terminal states only — not on Loading — so we never
+    // accidentally trigger navigation or snackbars mid-flight.
+    LaunchedEffect(loginUiState) {
+        when (loginUiState) {
+
+            is LoginUiState.LoginSuccess -> {
+                showSuccessOverlay = true
+                delay(1800)
+                onLoginSuccess()
+            }
+
+            is LoginUiState.Error -> {
+                showSuccessOverlay = false
+                val msg = loginUiState.errorMessage
+                    ?.takeIf { it.isNotBlank() }
+                    ?: "Login failed. Please check your email and password."
+                snackbarHostState.showSnackbar(
+                    message           = msg,
+                    withDismissAction = true,
+                    duration          = SnackbarDuration.Long
+                )
+                // Reset so this same error doesn't re-fire on recompose
+                viewModel.loginUiState = LoginUiState.Init
+            }
+
+            is LoginUiState.RegisterSuccess -> {
+                snackbarHostState.showSnackbar(
+                    message           = "Account created! You can now sign in.",
+                    withDismissAction = true,
+                    duration          = SnackbarDuration.Long
+                )
+                viewModel.loginUiState = LoginUiState.Init
+            }
+
+            else -> { /* Init / Loading — do nothing */ }
+        }
+    }
+
+    // ── Animations ────────────────────────────────────────────────────────────
     val breathe = rememberInfiniteTransition(label = "breathe")
     val titleScale by breathe.animateFloat(
         initialValue  = 1f,
         targetValue   = 1.05f,
         animationSpec = infiniteRepeatable(
-            tween(1400, easing = EaseInOutCubic),
-            RepeatMode.Reverse
+            tween(1400, easing = EaseInOutCubic), RepeatMode.Reverse
         ),
         label = "titleScale"
     )
 
-    // ── Divider diamond slow spin (kept, just for the small center diamond) ───
     val spin = rememberInfiniteTransition(label = "spin")
     val ringRotation by spin.animateFloat(
         initialValue  = 0f,
@@ -91,13 +131,13 @@ fun LoginScreen(
         label         = "ring"
     )
 
-    // ── Card entrance — simpler: just a quick fade, no slide ─────────────────
     val cardAlpha = remember { Animatable(0f) }
     LaunchedEffect(Unit) {
         cardAlpha.animateTo(1f, tween(400, easing = EaseOutCubic))
     }
 
-    // ── Button press scale ────────────────────────────────────────────────────
+    // Button scale animatables — driven only from coroutineScope (Main thread,
+    // no Firebase involvement, so no threading risk)
     val loginBtnScale    = remember { Animatable(1f) }
     val registerBtnScale = remember { Animatable(1f) }
 
@@ -110,7 +150,7 @@ fun LoginScreen(
             ) { data ->
                 Snackbar(
                     snackbarData   = data,
-                    containerColor = LogoGreen,
+                    containerColor = Rose500,
                     contentColor   = Color.White,
                     shape          = RoundedCornerShape(16.dp)
                 )
@@ -127,89 +167,57 @@ fun LoginScreen(
                     )
                 )
         ) {
-
-            // ── Static soft accent orbs ───────────────────────────────────────
+            // ── Background orbs ───────────────────────────────────────────────
             Box(
-                Modifier
-                    .size(320.dp)
-                    .offset((-130).dp, (-130).dp)
+                Modifier.size(320.dp).offset((-130).dp, (-130).dp).clip(CircleShape)
+                    .background(Brush.radialGradient(listOf(Color(0x20E76F8E), Color.Transparent)))
+            )
+            Box(
+                Modifier.size(260.dp).align(Alignment.BottomEnd).offset(100.dp, 100.dp)
                     .clip(CircleShape)
-                    .background(
-                        Brush.radialGradient(listOf(Color(0x20E76F8E), Color.Transparent))
-                    )
+                    .background(Brush.radialGradient(listOf(Color(0x1AA8D8B0), Color.Transparent)))
             )
             Box(
-                Modifier
-                    .size(260.dp)
-                    .align(Alignment.BottomEnd)
-                    .offset(100.dp, 100.dp)
-                    .clip(CircleShape)
-                    .background(
-                        Brush.radialGradient(listOf(Color(0x1AA8D8B0), Color.Transparent))
-                    )
+                Modifier.size(90.dp).align(Alignment.TopEnd).offset((-28).dp, 36.dp)
+                    .clip(DiamondShape)
+                    .background(Brush.linearGradient(listOf(Color(0x18E76F8E), Color(0x0FA8D8B0))))
+            )
+            Box(
+                Modifier.size(30.dp).align(Alignment.TopStart).offset(32.dp, 60.dp)
+                    .clip(DiamondShape).background(Color(0x25E76F8E))
             )
 
-            // ── Two static decorative diamonds (no spin) ──────────────────────
-            Box(
-                Modifier
-                    .size(90.dp)
-                    .align(Alignment.TopEnd)
-                    .offset((-28).dp, 36.dp)
-                    .clip(DiamondShape)
-                    .background(
-                        Brush.linearGradient(listOf(Color(0x18E76F8E), Color(0x0FA8D8B0)))
-                    )
-            )
-            Box(
-                Modifier
-                    .size(30.dp)
-                    .align(Alignment.TopStart)
-                    .offset(32.dp, 60.dp)
-                    .clip(DiamondShape)
-                    .background(Color(0x25E76F8E))
-            )
-
-            // ── Main centered content ─────────────────────────────────────────
+            // ── Main content ──────────────────────────────────────────────────
             Column(
-                modifier = Modifier
+                modifier            = Modifier
                     .fillMaxSize()
                     .padding(horizontal = 28.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-
                 Spacer(Modifier.height(48.dp))
 
-                // Breathing title
                 Text(
-                    text          = "FairShare",
-                    fontSize      = 42.sp,
-                    fontWeight    = FontWeight.Black,
-                    color         = LogoGreen,
-                    letterSpacing = (-1).sp,
-                    modifier      = Modifier.scale(titleScale)
+                    "FairShare",
+                    fontSize = 42.sp, fontWeight = FontWeight.Black,
+                    color = LogoGreen, letterSpacing = (-1).sp,
+                    modifier = Modifier.scale(titleScale)
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text          = "Share bills fairly. Keep friendships.",
-                    fontSize      = 13.sp,
-                    color         = Stone,
-                    letterSpacing = 0.6.sp,
-                    textAlign     = TextAlign.Center
+                    "Share bills fairly. Keep friendships.",
+                    fontSize = 13.sp, color = Stone,
+                    letterSpacing = 0.6.sp, textAlign = TextAlign.Center
                 )
-
                 Spacer(Modifier.height(10.dp))
 
-                // Decorative divider — only the small center diamond still spins
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier          = Modifier.fillMaxWidth(0.7f)
                 ) {
                     HorizontalDivider(Modifier.weight(1f), color = Rose300.copy(alpha = 0.4f))
                     Box(
-                        Modifier
-                            .padding(horizontal = 10.dp)
-                            .size(10.dp)
+                        Modifier.padding(horizontal = 10.dp).size(10.dp)
                             .rotate(ringRotation * 0.4f)
                             .background(Rose500.copy(alpha = 0.5f), RoundedCornerShape(2.dp))
                     )
@@ -218,7 +226,7 @@ fun LoginScreen(
 
                 Spacer(Modifier.height(10.dp))
 
-                // ── Login card ────────────────────────────────────────────────
+                // ── Card ──────────────────────────────────────────────────────
                 Card(
                     modifier  = Modifier
                         .fillMaxWidth()
@@ -228,29 +236,19 @@ fun LoginScreen(
                     elevation = CardDefaults.cardElevation(defaultElevation = 10.dp)
                 ) {
                     Box(
-                        Modifier
-                            .fillMaxWidth()
-                            .height(4.dp)
-                            .background(
-                                Brush.horizontalGradient(listOf(Rose300, Rose500, Mint300))
-                            )
+                        Modifier.fillMaxWidth().height(4.dp)
+                            .background(Brush.horizontalGradient(listOf(Rose300, Rose500, Mint300)))
                     )
-
                     Column(
                         modifier            = Modifier.padding(horizontal = 24.dp, vertical = 28.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text          = "Welcome",
-                            fontSize      = 19.sp,
-                            fontWeight    = FontWeight.Bold,
-                            color         = Rose500,
-                            letterSpacing = 0.3.sp
+                            "Welcome", fontSize = 19.sp, fontWeight = FontWeight.Bold,
+                            color = Rose500, letterSpacing = 0.3.sp
                         )
                         Text(
-                            text     = "Sign in to continue",
-                            fontSize = 12.sp,
-                            color    = Stone,
+                            "Sign in to continue", fontSize = 12.sp, color = Stone,
                             modifier = Modifier.padding(top = 3.dp)
                         )
 
@@ -294,10 +292,10 @@ fun LoginScreen(
                             trailingIcon = {
                                 IconButton(onClick = { showPassword = !showPassword }) {
                                     Icon(
-                                        imageVector        = if (showPassword) Icons.Default.VisibilityOff
+                                        if (showPassword) Icons.Default.VisibilityOff
                                         else Icons.Default.Visibility,
                                         contentDescription = null,
-                                        tint               = Rose500
+                                        tint = Rose500
                                     )
                                 }
                             },
@@ -316,19 +314,35 @@ fun LoginScreen(
 
                         Spacer(Modifier.height(28.dp))
 
+                        // ── Login button ──────────────────────────────────────
                         Button(
                             onClick = {
-                                coroutineScope.launch {
-                                    loginBtnScale.animateTo(0.95f, tween(80))
-                                    loginBtnScale.animateTo(
-                                        1f,
-                                        spring(dampingRatio = Spring.DampingRatioMediumBouncy)
-                                    )
-                                    val result = viewModel.loginUser(email, password)
-                                    if (result?.user != null) {
-                                        showSuccessOverlay = true
-                                        delay(1800)
-                                        onLoginSuccess()
+                                when {
+                                    email.isBlank() -> coroutineScope.launch {
+                                        snackbarHostState.showSnackbar(
+                                            "Please enter your email.",
+                                            withDismissAction = true
+                                        )
+                                    }
+                                    password.isBlank() -> coroutineScope.launch {
+                                        snackbarHostState.showSnackbar(
+                                            "Please enter your password.",
+                                            withDismissAction = true
+                                        )
+                                    }
+                                    else -> {
+                                        // Button bounce animation only — no Firebase here
+                                        coroutineScope.launch {
+                                            loginBtnScale.animateTo(0.95f, tween(80))
+                                            loginBtnScale.animateTo(
+                                                1f,
+                                                spring(dampingRatio = Spring.DampingRatioMediumBouncy)
+                                            )
+                                        }
+                                        // loginUser is a regular fun that launches
+                                        // its own viewModelScope coroutine — no
+                                        // threading clash with the animation above
+                                        viewModel.loginUser(email, password)
                                     }
                                 }
                             },
@@ -341,14 +355,22 @@ fun LoginScreen(
                                 containerColor = LogoGreen,
                                 contentColor   = Color.White
                             ),
-                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp),
+                            enabled   = !isLoading
                         ) {
-                            Text(
-                                text          = stringResource(R.string.login),
-                                fontSize      = 15.sp,
-                                fontWeight    = FontWeight.SemiBold,
-                                letterSpacing = 0.8.sp
-                            )
+                            if (isLoading) {
+                                CircularProgressIndicator(
+                                    color       = Color.White,
+                                    strokeWidth = 2.dp,
+                                    modifier    = Modifier.size(20.dp)
+                                )
+                            } else {
+                                Text(
+                                    stringResource(R.string.login),
+                                    fontSize = 15.sp, fontWeight = FontWeight.SemiBold,
+                                    letterSpacing = 0.8.sp
+                                )
+                            }
                         }
 
                         Spacer(Modifier.height(14.dp))
@@ -372,8 +394,8 @@ fun LoginScreen(
                                         1f,
                                         spring(dampingRatio = Spring.DampingRatioMediumBouncy)
                                     )
-                                    onNavigateToRegister(email, password)
                                 }
+                                onNavigateToRegister(email, password)
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -381,12 +403,12 @@ fun LoginScreen(
                                 .scale(registerBtnScale.value),
                             shape    = RoundedCornerShape(16.dp),
                             colors   = ButtonDefaults.outlinedButtonColors(contentColor = Rose500),
-                            border   = androidx.compose.foundation.BorderStroke(1.5.dp, Rose500)
+                            border   = androidx.compose.foundation.BorderStroke(1.5.dp, Rose500),
+                            enabled  = !isLoading
                         ) {
                             Text(
-                                text          = stringResource(R.string.register),
-                                fontSize      = 15.sp,
-                                fontWeight    = FontWeight.SemiBold,
+                                stringResource(R.string.register),
+                                fontSize = 15.sp, fontWeight = FontWeight.SemiBold,
                                 letterSpacing = 0.8.sp
                             )
                         }
@@ -394,40 +416,7 @@ fun LoginScreen(
                 }
             }
 
-            // ── State overlays ────────────────────────────────────────────────
-            when (val state = viewModel.loginUiState) {
-                is LoginUiState.Error -> {
-                    LaunchedEffect(state) {
-                        snackbarHostState.showSnackbar(
-                            message           = state.errorMessage ?: "Unknown error",
-                            withDismissAction = true
-                        )
-                    }
-                }
-                is LoginUiState.RegisterSuccess -> {
-                    LaunchedEffect(Unit) {
-                        snackbarHostState.showSnackbar(
-                            message           = "Registered successfully!",
-                            withDismissAction = true
-                        )
-                    }
-                }
-                is LoginUiState.Loading -> {
-                    Box(
-                        modifier         = Modifier
-                            .fillMaxSize()
-                            .background(Color(0x44FFFFFF)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(
-                            color       = LogoGreen,
-                            strokeWidth = 3.dp
-                        )
-                    }
-                }
-                else -> {}
-            }
-
+            // ── Success overlay ───────────────────────────────────────────────
             if (showSuccessOverlay) {
                 LoginSuccessOverlay()
             }
@@ -472,28 +461,20 @@ private fun LoginSuccessOverlay() {
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Box(
-                    Modifier
-                        .size(110.dp)
+                    Modifier.size(110.dp)
                         .scale(rippleScale.value)
                         .graphicsLayer { alpha = rippleAlpha.value }
                         .clip(CircleShape)
                         .background(LogoGreen.copy(alpha = 0.18f))
                 )
                 Box(
-                    Modifier
-                        .size(88.dp)
-                        .scale(checkScale.value)
-                        .clip(CircleShape)
-                        .background(
-                            Brush.radialGradient(listOf(Color(0xFF6FCF97), LogoGreen))
-                        ),
+                    Modifier.size(88.dp).scale(checkScale.value).clip(CircleShape)
+                        .background(Brush.radialGradient(listOf(Color(0xFF6FCF97), LogoGreen))),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector        = Icons.Default.Check,
-                        contentDescription = null,
-                        tint               = Color.White,
-                        modifier           = Modifier.size(44.dp)
+                        Icons.Default.Check, null,
+                        tint = Color.White, modifier = Modifier.size(44.dp)
                     )
                 }
             }
@@ -501,60 +482,45 @@ private fun LoginSuccessOverlay() {
             Spacer(Modifier.height(28.dp))
 
             Text(
-                text          = "You're in!",
-                fontSize      = 26.sp,
-                fontWeight    = FontWeight.Bold,
-                color         = LogoGreen,
-                letterSpacing = (-0.5).sp,
-                modifier      = Modifier.graphicsLayer { alpha = textAlpha.value }
+                "You're in!", fontSize = 26.sp, fontWeight = FontWeight.Bold,
+                color = LogoGreen, letterSpacing = (-0.5).sp,
+                modifier = Modifier.graphicsLayer { alpha = textAlpha.value }
             )
             Spacer(Modifier.height(6.dp))
             Text(
-                text     = "Taking you to your rooms…",
-                fontSize = 14.sp,
-                color    = Stone,
+                "Taking you to your rooms…", fontSize = 14.sp, color = Stone,
                 modifier = Modifier.graphicsLayer { alpha = textAlpha.value }
             )
-
             Spacer(Modifier.height(32.dp))
-
-            LoadingDots(
-                modifier = Modifier.graphicsLayer { alpha = textAlpha.value }
-            )
+            LoadingDots(modifier = Modifier.graphicsLayer { alpha = textAlpha.value })
         }
     }
 }
 
-// ── Three bouncing dots ───────────────────────────────────────────────────────
 @Composable
 private fun LoadingDots(modifier: Modifier = Modifier) {
     val inf = rememberInfiniteTransition(label = "dots")
-
     val dot1Y by inf.animateFloat(
         initialValue  = 0f, targetValue = -8f,
         animationSpec = infiniteRepeatable(
             tween(380, easing = FastOutSlowInEasing),
-            RepeatMode.Reverse,
-            initialStartOffset = StartOffset(0)
+            RepeatMode.Reverse, initialStartOffset = StartOffset(0)
         ), label = "d1"
     )
     val dot2Y by inf.animateFloat(
         initialValue  = 0f, targetValue = -8f,
         animationSpec = infiniteRepeatable(
             tween(380, easing = FastOutSlowInEasing),
-            RepeatMode.Reverse,
-            initialStartOffset = StartOffset(120)
+            RepeatMode.Reverse, initialStartOffset = StartOffset(120)
         ), label = "d2"
     )
     val dot3Y by inf.animateFloat(
         initialValue  = 0f, targetValue = -8f,
         animationSpec = infiniteRepeatable(
             tween(380, easing = FastOutSlowInEasing),
-            RepeatMode.Reverse,
-            initialStartOffset = StartOffset(240)
+            RepeatMode.Reverse, initialStartOffset = StartOffset(240)
         ), label = "d3"
     )
-
     Row(
         modifier              = modifier,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -562,8 +528,7 @@ private fun LoadingDots(modifier: Modifier = Modifier) {
     ) {
         listOf(dot1Y, dot2Y, dot3Y).forEach { offsetY ->
             Box(
-                Modifier
-                    .size(8.dp)
+                Modifier.size(8.dp)
                     .graphicsLayer { translationY = offsetY }
                     .clip(CircleShape)
                     .background(LogoGreen.copy(alpha = 0.6f))

@@ -171,8 +171,6 @@ class BillViewModel : ViewModel() {
                 onResult(emptyList())
             }
     }
-
-
     fun updateBalance(
         groupId: String,
         billItems: List<Item>,

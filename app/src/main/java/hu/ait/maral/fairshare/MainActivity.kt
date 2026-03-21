@@ -111,6 +111,7 @@ fun NavGraph(modifier: Modifier) {
 
             entry<RoomScreenKey> { key ->
                 RoomScreen(groupId = key.groupId,
+                    onBack = { backStack.removeLastOrNull() },
                     onAddBillClick = { backStack.add(BillScreenKey(key.groupId)) })
             }
 

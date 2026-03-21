@@ -1,6 +1,9 @@
 package hu.ait.maral.fairshare.data
 
+import java.util.Date
+
 data class Group(
+    val createdAt: Long = System.currentTimeMillis(),
     val groupId: String = "",
     val name: String = "",
     val members: List<String> = emptyList(),

@@ -18,7 +18,7 @@ class NotificationsViewModel : ViewModel() {
         private set
 
     private val auth = FirebaseAuth.getInstance()
-    private val db = FirebaseFirestore.getInstance()
+    private val db   = FirebaseFirestore.getInstance()
 
     fun loadPendingGroups() {
         val user = auth.currentUser ?: return
@@ -28,16 +28,16 @@ class NotificationsViewModel : ViewModel() {
 
         db.collection("groups")
             .whereArrayContains("pendingMemberIds", user.uid)
-            .get()
-            .addOnSuccessListener { snapshot ->
-                val result = snapshot.documents.mapNotNull { doc ->
-                    doc.toObject(Group::class.java)?.copy(groupId = doc.id)
+            .addSnapshotListener { snapshot, e ->
+                if (e != null) {
+                    errorMessage.value = e.localizedMessage
+                    isLoading.value = false
+                    return@addSnapshotListener
                 }
+                val result = snapshot?.documents?.mapNotNull { doc ->
+                    doc.toObject(Group::class.java)?.copy(groupId = doc.id)
+                } ?: emptyList()
                 pendingGroups.value = result
-                isLoading.value = false
-            }
-            .addOnFailureListener { e ->
-                errorMessage.value = e.localizedMessage
                 isLoading.value = false
             }
     }
@@ -45,52 +45,36 @@ class NotificationsViewModel : ViewModel() {
     fun acceptGroup(group: Group) {
         val user = auth.currentUser ?: return
         val groupRef = db.collection("groups").document(group.groupId)
-        val userRef = db.collection("users").document(user.uid)
+        val userRef  = db.collection("users").document(user.uid)
 
         db.runTransaction { tx ->
             val groupSnap = tx.get(groupRef)
-            val userSnap = tx.get(userRef)
+            val userSnap  = tx.get(userRef)
 
-            val currentMemberIds =
-                (groupSnap.get("memberIds") as? List<String>) ?: emptyList()
-            val currentPendingIds =
-                (groupSnap.get("pendingMemberIds") as? List<String>) ?: emptyList()
-            val currentMembers =
-                (groupSnap.get("members") as? List<String>) ?: emptyList()
+            val currentMemberIds  = (groupSnap.get("memberIds")        as? List<*>)?.filterIsInstance<String>() ?: emptyList()
+            val currentPendingIds = (groupSnap.get("pendingMemberIds") as? List<*>)?.filterIsInstance<String>() ?: emptyList()
+            val currentMembers    = (groupSnap.get("members")          as? List<*>)?.filterIsInstance<String>() ?: emptyList()
 
+            // Safely read balances regardless of how Firestore stored the numbers
             val rawBalances = groupSnap.get("balances")
-
             val balancesMap: MutableMap<String, Double> = when (rawBalances) {
-                is Map<*, *> -> {
-                    rawBalances.mapNotNull { (k, v) ->
-                        val key = k as? String ?: return@mapNotNull null
-                        val value = (v as? Number)?.toDouble() ?: 0.0
-                        key to value
-                    }.toMap().toMutableMap()
-                }
-
-                is List<*> -> {
-                    val list = rawBalances.map { (it as? Number)?.toDouble() ?: 0.0 }
-                    mutableMapOf<String, Double>().apply {
-                        for (i in currentMemberIds.indices) {
-                            val id = currentMemberIds[i]
-                            val value = list.getOrNull(i) ?: 0.0
-                            this[id] = value
-                        }
-                    }
-                }
+                is Map<*, *> -> rawBalances.mapNotNull { (k, v) ->
+                    val key   = k as? String ?: return@mapNotNull null
+                    val value = (v as? Number)?.toDouble() ?: 0.0
+                    key to value
+                }.toMap().toMutableMap()
                 else -> mutableMapOf()
             }
-            val nameFromDoc = userSnap.getString("name")
-            val displayName = nameFromDoc
+
+            val displayName = userSnap.getString("name")
                 ?: user.displayName
                 ?: user.email
                 ?: "Unknown"
 
-            val updatedMemberIds = (currentMemberIds + user.uid).distinct()
+            val updatedMemberIds  = (currentMemberIds + user.uid).distinct()
             val updatedPendingIds = currentPendingIds.filter { it != user.uid }
+            val updatedMembers    = currentMembers + displayName
 
-            val updatedMembers = currentMembers + displayName
             if (!balancesMap.containsKey(user.uid)) {
                 balancesMap[user.uid] = 0.0
             }
@@ -98,38 +82,28 @@ class NotificationsViewModel : ViewModel() {
             tx.update(
                 groupRef,
                 mapOf(
-                    "memberIds" to updatedMemberIds,
+                    "memberIds"        to updatedMemberIds,
                     "pendingMemberIds" to updatedPendingIds,
-                    "members" to updatedMembers,
-                    "balances" to balancesMap
+                    "members"          to updatedMembers,
+                    "balances"         to balancesMap
                 )
             )
         }.addOnSuccessListener {
-            loadPendingGroups()
+            // Snapshot listener above will auto-refresh pendingGroups
         }.addOnFailureListener { e ->
             errorMessage.value = e.localizedMessage
         }
     }
 
     fun declineGroup(group: Group) {
-        val user = auth.currentUser ?: return
+        val user     = auth.currentUser ?: return
         val groupRef = db.collection("groups").document(group.groupId)
 
-        db.runTransaction { transaction ->
-            val snap = transaction.get(groupRef)
-
-            val currentPendingIds =
-                (snap.get("pendingMemberIds") as? List<String>) ?: emptyList()
+        db.runTransaction { tx ->
+            val snap              = tx.get(groupRef)
+            val currentPendingIds = (snap.get("pendingMemberIds") as? List<*>)?.filterIsInstance<String>() ?: emptyList()
             val updatedPendingIds = currentPendingIds.filter { it != user.uid }
-
-            transaction.update(
-                groupRef,
-                mapOf(
-                    "pendingMemberIds" to updatedPendingIds
-                )
-            )
-        }.addOnSuccessListener {
-            loadPendingGroups()
+            tx.update(groupRef, mapOf("pendingMemberIds" to updatedPendingIds))
         }.addOnFailureListener { e ->
             errorMessage.value = e.localizedMessage
         }
